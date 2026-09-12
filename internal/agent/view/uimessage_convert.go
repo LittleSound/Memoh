@@ -30,6 +30,7 @@ var (
 		[]byte(`"skill_activation"`),
 		[]byte(`"user_message_kind"`),
 		[]byte(`"error_code"`),
+		[]byte(`"diff"`),
 	}
 )
 
@@ -53,6 +54,7 @@ type uiExtractedToolCall struct {
 	Approval          *UIToolApproval
 	ExecutionLocation *UIExecutionLocation
 	UserInput         *UIUserInput
+	Diff              string
 }
 
 type uiExtractedToolResult struct {
@@ -131,6 +133,7 @@ func ConvertModelMessagesToUIAssistantMessages(messages []turn.ModelMessage) []U
 					Approval:          call.Approval,
 					ExecutionLocation: call.ExecutionLocation,
 					UserInput:         call.UserInput,
+					Diff:              call.Diff,
 				})
 				if call.ID != "" {
 					pending.ToolIndexes[call.ID] = len(pending.Turn.Messages) - 1
@@ -367,6 +370,7 @@ func ConvertMessagesToUITurns(messages []messagepkg.Message) []UITurn {
 				continue
 			}
 
+			ensurePersistedMetadata(&raw)
 			modelMessage := decodePersistedModelMessage(raw)
 			for _, toolResult := range extractPersistedToolResults(&modelMessage) {
 				idx, ok := pending.ToolIndexes[toolResult.ToolCallID]
@@ -375,6 +379,12 @@ func ConvertMessagesToUITurns(messages []messagepkg.Message) []UITurn {
 				}
 
 				applyToolResultToUIMessage(&pending.Turn.Messages[idx], toolResult.Output)
+				// The deferred-approval path persists the edit diff as row-level
+				// metadata on the tool message (the stream path attaches it to
+				// the call's ProviderMetadata instead).
+				if diff := extractDiffMetadata(raw.Metadata); diff != "" {
+					pending.Turn.Messages[idx].Diff = diff
+				}
 			}
 		}
 	}
@@ -433,6 +443,9 @@ func upsertPendingToolCall(pending *uiPendingAssistantTurn, call uiExtractedTool
 			if call.UserInput != nil {
 				msg.UserInput = call.UserInput
 			}
+			if call.Diff != "" {
+				msg.Diff = call.Diff
+			}
 			msg.Running = uiBoolPtr(true)
 			return
 		}
@@ -446,6 +459,7 @@ func upsertPendingToolCall(pending *uiPendingAssistantTurn, call uiExtractedTool
 		Approval:          call.Approval,
 		ExecutionLocation: call.ExecutionLocation,
 		UserInput:         call.UserInput,
+		Diff:              call.Diff,
 	}
 	appendPendingAssistantMessage(pending, block)
 	if call.ID != "" {
@@ -786,6 +800,7 @@ func extractPersistedToolCalls(message *uiDecodedModelMessage) []uiExtractedTool
 			Approval:          extractApprovalMetadata(part.ProviderMetadata),
 			ExecutionLocation: extractExecutionLocationMetadata(part.ProviderMetadata),
 			UserInput:         extractUserInputMetadata(part.ProviderMetadata),
+			Diff:              extractDiffMetadata(part.ProviderMetadata),
 		})
 	}
 	if len(calls) > 0 {
@@ -893,6 +908,17 @@ func extractExecutionLocationMetadata(metadata map[string]any) *UIExecutionLocat
 		return nil
 	}
 	return location
+}
+
+// extractDiffMetadata reads the UI-only unified diff the runtime attached to
+// the tool call's ProviderMetadata at execution time (edit tool). It lives
+// beside the tool result, never inside it, so the model never sees it.
+func extractDiffMetadata(metadata map[string]any) string {
+	if metadata == nil {
+		return ""
+	}
+	diff, _ := metadata["diff"].(string)
+	return diff
 }
 
 func extractUserInputMetadata(metadata map[string]any) *UIUserInput {
