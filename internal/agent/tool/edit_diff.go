@@ -10,6 +10,13 @@ import (
 // changed line in the edit tool's diff, matching the git default.
 const editDiffContextLines = 3
 
+// maxUIDiffBytes caps the rendered diff that is attached to tool UI metadata.
+// Inputs are already bounded by largeFileThreshold, but a full rewrite of a
+// file just under that bound would still produce ~1 MiB of diff — pointless
+// to render in chat and needlessly heavy to persist. Past the cap the UI
+// falls back to the plain before/after view.
+const maxUIDiffBytes = 64 * 1024 // 64 KB
+
 // editContextDiff renders a unified diff between the file content before and
 // after an edit tool call, so the UI can show the change where it happened —
 // unchanged context lines stay plain, only actually removed/added lines get
@@ -55,7 +62,11 @@ func editContextDiff(filePath, before, after string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return strings.TrimSuffix(diff, "\n"), nil
+	diff = strings.TrimSuffix(diff, "\n")
+	if len(diff) > maxUIDiffBytes {
+		return "", nil
+	}
+	return diff, nil
 }
 
 func trimPhantomLine(lines []string) []string {

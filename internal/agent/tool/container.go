@@ -42,6 +42,11 @@ const containerOpTimeout = 30 * time.Second
 // Files <= this threshold use the simpler synchronous gRPC calls.
 const largeFileThreshold = 512 * 1024 // 512 KB
 
+// diffPreReadTimeout bounds the best-effort read of a file's previous content
+// for the UI diff in execWrite. It must stay short: the read is display
+// sugar and runs on its own context so it cannot starve the real write.
+const diffPreReadTimeout = 5 * time.Second
+
 type ContainerProvider struct {
 	clients     bridge.Provider
 	bgManager   *background.Manager
@@ -871,25 +876,16 @@ func (p *ContainerProvider) execWrite(ctx context.Context, session SessionContex
 	// could not be read. hasBefore stays false when the old content is
 	// unknown (oversized, unreadable, stat failure) — rendering an all-add
 	// diff for what was really an overwrite would mislead, so no diff is
-	// attached in that case. Files above the diff size limit are never read:
-	// editContextDiff would skip them anyway, so the read would be pure waste.
+	// attached in that case. The pre-read runs on its own short context so a
+	// slow workspace cannot burn the write's opCtx; files above the diff size
+	// limit are never read, and neither is an oversized write — either way
+	// editContextDiff would produce no diff, so the read would be pure waste.
 	before := ""
 	hasBefore := false
-	if stat, statErr := client.Stat(opCtx, filePath); statErr == nil && stat != nil && !stat.GetIsDir() {
-		if stat.GetSize() <= largeFileThreshold {
-			if reader, readErr := client.ReadRaw(opCtx, filePath); readErr == nil {
-				if raw, ioErr := io.ReadAll(reader); ioErr == nil {
-					before = string(raw)
-					hasBefore = true
-				}
-				_ = reader.Close()
-			}
-		}
-	} else if statErr != nil && errors.Is(statErr, bridge.ErrNotFound) {
-		// Genuinely a new file: the diff from empty is exact. (The bridge
-		// client maps gRPC NotFound to its ErrNotFound sentinel, so check
-		// that, not status.Code.)
-		hasBefore = true
+	if len(data) <= largeFileThreshold {
+		readCtx, readCancel := context.WithTimeout(ctx, diffPreReadTimeout)
+		before, hasBefore = readFileForDiff(readCtx, client, filePath)
+		readCancel()
 	}
 	if res, err := p.runWorkspaceToolHook(ctx, session, target.hookWorkspaceInfo(p.execWorkDir), hooks.EventBeforeFileWrite, map[string]any{
 		"path":  filePath,
@@ -930,6 +926,40 @@ func (p *ContainerProvider) execWrite(ctx context.Context, session SessionContex
 		}
 	}
 	return result, nil
+}
+
+// readFileForDiff best-effort reads a file's current content so execWrite can
+// diff against it. Returns hasBefore=false whenever the truth is unknown —
+// oversized file, stat/read failure, or the file grew past the limit between
+// Stat and the read — so callers never diff against a truncated or guessed
+// "before". A confirmed-missing file is an exact empty before.
+func readFileForDiff(ctx context.Context, client *bridge.Client, filePath string) (string, bool) {
+	stat, err := client.Stat(ctx, filePath)
+	if err != nil {
+		// The bridge client maps gRPC NotFound to its ErrNotFound sentinel, so
+		// check that, not status.Code.
+		if errors.Is(err, bridge.ErrNotFound) {
+			return "", true
+		}
+		return "", false
+	}
+	if stat == nil || stat.GetIsDir() || stat.GetSize() > largeFileThreshold {
+		return "", false
+	}
+	reader, err := client.ReadRaw(ctx, filePath)
+	if err != nil {
+		return "", false
+	}
+	defer func() { _ = reader.Close() }()
+	// Stat's size is a snapshot; cap the read so a file that grows in between
+	// cannot pull an unbounded body into memory. Anything past the threshold
+	// makes the diff moot anyway, so overflow is treated as unreadable rather
+	// than truncated.
+	raw, err := io.ReadAll(io.LimitReader(reader, largeFileThreshold+1))
+	if err != nil || int64(len(raw)) > largeFileThreshold {
+		return "", false
+	}
+	return string(raw), true
 }
 
 func (p *ContainerProvider) execList(ctx context.Context, session SessionContext, args map[string]any) (any, error) {

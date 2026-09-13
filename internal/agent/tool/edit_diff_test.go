@@ -87,6 +87,27 @@ func TestEditContextDiffSkippedForLargeFiles(t *testing.T) {
 	}
 }
 
+func TestEditContextDiffSkipsOversizedDiffOutput(t *testing.T) {
+	// Both inputs stay under largeFileThreshold, but a full rewrite whose
+	// rendered diff exceeds maxUIDiffBytes must fall back to no diff — the
+	// payload is too heavy to persist and unreadable in chat anyway.
+	var before, after strings.Builder
+	for i := 0; i < 2000; i++ {
+		before.WriteString("before line with some padding text\n")
+		after.WriteString("after  line with some padding text\n")
+	}
+	if int64(before.Len()) > largeFileThreshold {
+		t.Fatalf("test input exceeds largeFileThreshold: %d", before.Len())
+	}
+	diff, err := editContextDiff("rewrite.txt", before.String(), after.String())
+	if err != nil {
+		t.Fatalf("editContextDiff returned error: %v", err)
+	}
+	if diff != "" {
+		t.Errorf("expected empty diff past the output cap, got %d bytes", len(diff))
+	}
+}
+
 func TestEditContextDiffNewFileIsAllAdditions(t *testing.T) {
 	diff, err := editContextDiff("dir/new.txt", "", "alpha\nbeta\n")
 	if err != nil {

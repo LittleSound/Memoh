@@ -294,6 +294,12 @@ func (s *Service) buildPersistInputs(ctx context.Context, req ChatRequest, messa
 			}
 		}
 
+		// Lift UI-only diffs out of tool-call providerMetadata before the
+		// content column is written: inside content they would count against
+		// the history byte budget; on the row's metadata they still reach the
+		// UI converter via ToolCallDiffsMetadataKey.
+		msg, toolCallDiffs := historyfrag.ExtractToolCallDiffs(msg)
+
 		content, err := historyfrag.MarshalStoredModelMessage(msg)
 		if err != nil {
 			return nil, fmt.Errorf("marshal message %d: %w", i, err)
@@ -371,6 +377,11 @@ func (s *Service) buildPersistInputs(ctx context.Context, req ChatRequest, messa
 		}
 		if i == lastAssistantIdx && len(outboundAssets) > 0 {
 			assets = append(assets, outboundAssets...)
+		}
+		if len(toolCallDiffs) > 0 {
+			persistMeta = mergeMetadata(persistMeta, map[string]any{
+				messagepkg.ToolCallDiffsMetadataKey: toolCallDiffs,
+			})
 		}
 		if extraMeta := opts.MessageMetadataByIndex[i]; len(extraMeta) > 0 {
 			persistMeta = mergeMetadata(persistMeta, extraMeta)

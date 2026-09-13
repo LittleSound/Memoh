@@ -31,6 +31,7 @@ var (
 		[]byte(`"user_message_kind"`),
 		[]byte(`"error_code"`),
 		[]byte(`"diff"`),
+		[]byte(`"diffs"`),
 	}
 )
 
@@ -314,6 +315,16 @@ func ConvertMessagesToUITurns(messages []messagepkg.Message) []UITurn {
 			}
 			modelMessage := decodePersistedModelMessage(raw)
 			toolCalls := extractPersistedToolCalls(&modelMessage)
+			// New rows carry diffs on the row's metadata (lifted out of
+			// content at persist time so they don't count against the history
+			// byte budget); older rows still have them in providerMetadata.
+			if rowDiffs := extractDiffsByToolCallID(raw.Metadata); len(rowDiffs) > 0 {
+				for i := range toolCalls {
+					if toolCalls[i].Diff == "" {
+						toolCalls[i].Diff = rowDiffs[toolCalls[i].ID]
+					}
+				}
+			}
 			text := extractPersistedMessageText(raw, &modelMessage)
 			reasonings := extractPersistedReasoning(&modelMessage)
 			attachments := uiAttachmentsFromMessageAssets(raw)
@@ -379,9 +390,9 @@ func ConvertMessagesToUITurns(messages []messagepkg.Message) []UITurn {
 				}
 
 				applyToolResultToUIMessage(&pending.Turn.Messages[idx], toolResult.Output)
-				// The deferred-approval path persists the edit diff as row-level
-				// metadata on the tool message (the stream path attaches it to
-				// the call's ProviderMetadata instead).
+				// The deferred-approval path persists the diff as row-level
+				// metadata on the tool message (the immediate path stores it
+				// under "diffs" on the assistant row instead).
 				if diff := extractDiffMetadata(raw.Metadata); diff != "" {
 					pending.Turn.Messages[idx].Diff = diff
 				}
@@ -911,14 +922,36 @@ func extractExecutionLocationMetadata(metadata map[string]any) *UIExecutionLocat
 }
 
 // extractDiffMetadata reads the UI-only unified diff the runtime attached to
-// the tool call's ProviderMetadata at execution time (edit tool). It lives
-// beside the tool result, never inside it, so the model never sees it.
+// the tool call's ProviderMetadata at execution time (edit/write tools). It
+// lives beside the tool result, never inside it, so the model never sees it.
 func extractDiffMetadata(metadata map[string]any) string {
 	if metadata == nil {
 		return ""
 	}
 	diff, _ := metadata["diff"].(string)
 	return diff
+}
+
+// extractDiffsByToolCallID reads the row-level map the persist path stores
+// under ToolCallDiffsMetadataKey after lifting diffs out of content.
+func extractDiffsByToolCallID(metadata map[string]any) map[string]string {
+	if metadata == nil {
+		return nil
+	}
+	raw, ok := metadata[messagepkg.ToolCallDiffsMetadataKey].(map[string]any)
+	if !ok {
+		return nil
+	}
+	diffs := make(map[string]string, len(raw))
+	for callID, value := range raw {
+		if diff, ok := value.(string); ok && diff != "" {
+			diffs[callID] = diff
+		}
+	}
+	if len(diffs) == 0 {
+		return nil
+	}
+	return diffs
 }
 
 func extractUserInputMetadata(metadata map[string]any) *UIUserInput {

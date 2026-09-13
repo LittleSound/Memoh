@@ -1444,6 +1444,14 @@ export type ConversationUiMessage = {
     background_task?: ConversationUiBackgroundTask;
     code?: string;
     content?: string;
+    /**
+     * Diff is a UI-only unified diff attached to the tool call at execution
+     * time (edit/write tools). It never reaches the model: rows persist it
+     * under the diffs metadata key — on the assistant row (lifted out of
+     * providerMetadata at store time) or, for the deferred-approval path, on
+     * the tool message row — never inside the tool result.
+     */
+    diff?: string;
     execution_location?: ConversationUiExecutionLocation;
     id?: number;
     input?: unknown;

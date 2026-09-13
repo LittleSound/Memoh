@@ -300,7 +300,10 @@ const approvalLabel = computed(() => {
   if (!approval?.approval_id || approval.status === 'approved') return ''
   if (approval.status === 'pending') return t('chat.tools.pendingApproval', 'Awaiting approval')
   if (approval.status === 'rejected') return t('chat.tools.approvalDeclined', 'Declined')
-  if (approval.status === 'canceled') return t('chat.tools.approvalCanceled', 'Canceled')
+  // The backend emits "cancelled" (approval.StatusCancelled); accept the
+  // American spelling too so external runtimes don't fall through raw.
+  if (approval.status === 'cancelled' || approval.status === 'canceled') return t('chat.tools.approvalCanceled', 'Canceled')
+  if (approval.status === 'expired') return t('chat.tools.approvalExpired', 'Expired')
   return approval.status
 })
 

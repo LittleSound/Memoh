@@ -68,9 +68,10 @@ type UIMessage struct {
 	Approval          *UIToolApproval      `json:"approval,omitempty"`
 	ExecutionLocation *UIExecutionLocation `json:"execution_location,omitempty"`
 	// Diff is a UI-only unified diff attached to the tool call at execution
-	// time (edit tool). It never reaches the model: the stream path persists
-	// it in the tool call's ProviderMetadata, the deferred-approval path as
-	// row metadata on the tool message — never in the tool result.
+	// time (edit/write tools). It never reaches the model: rows persist it
+	// under the diffs metadata key — on the assistant row (lifted out of
+	// providerMetadata at store time) or, for the deferred-approval path, on
+	// the tool message row — never inside the tool result.
 	Diff            string             `json:"diff,omitempty"`
 	UserInput       *UIUserInput       `json:"user_input,omitempty"`
 	Attachments     []UIAttachment     `json:"attachments,omitempty"`

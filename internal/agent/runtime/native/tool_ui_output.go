@@ -8,10 +8,11 @@ import (
 	tools "github.com/felinics/memoh/internal/agent/tool"
 )
 
-// recordUIOutput stores a tool's UI-only payload (everything under the
-// reserved tools.UIOutputMetadataKey) beside the tool call. It rides the
+// recordUIOutput stores a tool's UI-only payload (the allowlisted keys under
+// the reserved tools.UIOutputMetadataKey) beside the tool call. It rides the
 // same harness-side channels as the approval-pinned location: stream events
-// and the persisted ToolCallPart.ProviderMetadata. The model never sees it.
+// and ToolCallPart.ProviderMetadata, lifted onto row metadata at persist
+// time. The model never sees it.
 func (r *toolExecutionMetadataRegistry) recordUIOutput(toolCallID string, values map[string]any) {
 	if r == nil || len(values) == 0 {
 		return
@@ -22,11 +23,14 @@ func (r *toolExecutionMetadataRegistry) recordUIOutput(toolCallID string, values
 	}
 	r.mu.Lock()
 	existing := r.uiExtras[callID]
-	if existing == nil {
-		existing = make(map[string]any, len(values))
-		r.uiExtras[callID] = existing
-	}
 	for key, value := range values {
+		if !tools.IsUIOutputKey(key) {
+			continue
+		}
+		if existing == nil {
+			existing = make(map[string]any, len(values))
+			r.uiExtras[callID] = existing
+		}
 		existing[key] = value
 	}
 	r.mu.Unlock()

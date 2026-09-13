@@ -1039,6 +1039,7 @@
       "pendingApproval": "承認待ち",
       "approvalDeclined": "拒否",
       "approvalCanceled": "キャンセル",
+      "approvalExpired": "期限切れ",
       "executionLocation": "実行場所",
       "pendingUserInput": "入力を待っています",
       "userInputSubmitted": "答えた",

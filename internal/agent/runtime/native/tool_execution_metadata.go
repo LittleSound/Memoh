@@ -14,8 +14,9 @@ import (
 // without adding display fields to what the model sees: target identity
 // pinned at approval time, and tool-result payloads (e.g. the edit diff)
 // stripped from the tool output before the SDK records it. Both are merged
-// back only into harness-side channels — stream events and the persisted
-// ToolCallPart.ProviderMetadata.
+// back only into harness-side channels — stream events and the in-memory
+// ToolCallPart.ProviderMetadata, which the persist path then lifts onto the
+// row's metadata column so the payload never counts against history bytes.
 type toolExecutionMetadataRegistry struct {
 	mu        sync.RWMutex
 	locations map[string]any
@@ -69,17 +70,23 @@ func (r *toolExecutionMetadataRegistry) metadata(toolCallID string) map[string]a
 	callID := strings.TrimSpace(toolCallID)
 	r.mu.RLock()
 	location, hasLocation := r.locations[callID]
-	extras, hasExtras := r.uiExtras[callID]
+	extras := r.uiExtras[callID]
 	r.mu.RUnlock()
-	if !hasLocation && !hasExtras {
+	if !hasLocation && len(extras) == 0 {
 		return nil
 	}
 	metadata := make(map[string]any, 1+len(extras))
+	for key, value := range extras {
+		// System-owned keys are never overridable by tool output — extras
+		// arrive via the allowlist already, but keep the guard local so the
+		// invariant holds wherever uiExtras is fed from.
+		if key == toolapproval.ExecutionLocationMetadataKey {
+			continue
+		}
+		metadata[key] = value
+	}
 	if hasLocation && location != nil {
 		metadata[toolapproval.ExecutionLocationMetadataKey] = location
-	}
-	for key, value := range extras {
-		metadata[key] = value
 	}
 	return metadata
 }

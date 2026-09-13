@@ -1058,6 +1058,7 @@
       "pendingApproval": "Awaiting approval",
       "approvalDeclined": "Declined",
       "approvalCanceled": "Canceled",
+      "approvalExpired": "Expired",
       "executionLocation": "Execution location",
       "pendingUserInput": "waiting for input",
       "userInputSubmitted": "answered",

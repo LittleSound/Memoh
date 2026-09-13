@@ -1070,6 +1070,7 @@
       "pendingApproval": "等待审核",
       "approvalDeclined": "已拒绝",
       "approvalCanceled": "已取消",
+      "approvalExpired": "已过期",
       "executionLocation": "执行位置",
       "pendingUserInput": "等待输入",
       "userInputSubmitted": "已回答",

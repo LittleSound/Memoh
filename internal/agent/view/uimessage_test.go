@@ -2008,6 +2008,42 @@ func TestConvertMessagesToUITurnsAppliesToolRowDiffMetadata(t *testing.T) {
 	}
 }
 
+func TestConvertMessagesToUITurnsAppliesAssistantRowDiffsMetadata(t *testing.T) {
+	t.Parallel()
+
+	// The immediate path lifts diffs out of the assistant row's content onto
+	// its metadata at persist time; the converter must read them back.
+	diff := "--- a/f\n+++ b/f\n@@ -1 +1 @@\n-old\n+new\n"
+	turns := convertTestMessagesToUITurns([]messagepkg.Message{
+		{
+			ID:        "assistant-1",
+			BotID:     "bot-1",
+			SessionID: "session-1",
+			Role:      "assistant",
+			Content: mustUIMessageJSON(t, turn.ModelMessage{
+				Role: "assistant",
+				Content: mustUIRawJSON(t, []map[string]any{
+					{"type": "tool-call", "toolCallId": "call-1", "toolName": "edit", "input": map[string]any{"path": "f"}},
+					{"type": "tool-call", "toolCallId": "call-2", "toolName": "exec", "input": map[string]any{"command": "ls"}},
+				}),
+			}),
+			Metadata: map[string]any{
+				"diffs": map[string]any{"call-1": diff},
+			},
+		},
+	})
+
+	if len(turns) != 1 || len(turns[0].Messages) != 2 {
+		t.Fatalf("turns = %#v, want two tool blocks", turns)
+	}
+	if got := turns[0].Messages[0].Diff; got != diff {
+		t.Fatalf("first block diff = %q, want %q", got, diff)
+	}
+	if got := turns[0].Messages[1].Diff; got != "" {
+		t.Fatalf("unrelated block picked up a diff: %q", got)
+	}
+}
+
 func TestUIMessageStreamConverterAppliesDiffMetadataOnToolEnd(t *testing.T) {
 	t.Parallel()
 

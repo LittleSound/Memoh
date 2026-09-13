@@ -21334,6 +21334,10 @@ const docTemplate = `{
                 "content": {
                     "type": "string"
                 },
+                "diff": {
+                    "description": "Diff is a UI-only unified diff attached to the tool call at execution\ntime (edit/write tools). It never reaches the model: rows persist it\nunder the diffs metadata key — on the assistant row (lifted out of\nproviderMetadata at store time) or, for the deferred-approval path, on\nthe tool message row — never inside the tool result.",
+                    "type": "string"
+                },
                 "execution_location": {
                     "$ref": "#/definitions/conversation.UIExecutionLocation"
                 },

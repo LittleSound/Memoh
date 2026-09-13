@@ -68,7 +68,7 @@ watch(
 )
 </script>
 
-<style>
+<style scoped>
 /* Diff panel rows: a solid indicator bar at the left edge of changed rows,
    then gutter line number + −/+ marker + code, all sharing one horizontal
    scroll width so every row's band spans the same distance. The gutter
@@ -146,8 +146,10 @@ watch(
 }
 /* The inline emphasis reuses the row band token: stacking the same alpha
    color over the band doubles its intensity, keeping light/dark themes in
-   step without a second pair of tokens. */
-.shiki-diff-grid .diff-code .diff-inline {
+   step without a second pair of tokens. The span is injected by shiki's
+   v-html output, so it needs :deep to reach past the scoped-attribute
+   boundary. */
+.shiki-diff-grid .diff-code :deep(.diff-inline) {
   background-color: var(--inline-bg);
 }
 </style>

@@ -29,6 +29,9 @@ vi.mock('@/composables/useShikiHighlighter', async (importOriginal) => {
           diffRows.value = actual.parseUnifiedDiffRows(diff).map((row) => ({ ...row, html: row.text }))
         },
         highlight: async () => {},
+        highlightLang: async () => {},
+        highlightDiff: async () => {},
+        highlightLanguage: async () => {},
       }
     },
   }
@@ -101,6 +104,20 @@ it.each([['en', 'Tool execution failed.'], ['zh', '工具执行失败。'], ['ja
   const { root } = mountTool('web_search', { query: 'review' }, { isError: true }, false, locale)
   await open(root)
   expect(root.textContent).toContain(text)
+})
+// The backend emits "cancelled" (two l) while external runtimes may send the
+// American spelling — both must hit the same localized label rather than
+// falling through to the raw status.
+it.each([
+  ['cancelled', 'Canceled'],
+  ['canceled', 'Canceled'],
+  ['expired', 'Expired'],
+])('localizes approval status %s', async (status, label) => {
+  const { root, block } = mountTool('read', { path: '/f.txt' }, { ok: true })
+  block.approval = { approval_id: `ap-${status}`, status }
+  await nextTick()
+  expect(root.textContent).toContain(label)
+  expect(root.textContent).not.toContain(status)
 })
 it('switches an open specialized detail when the streamed result completes', async () => {
   const { root, block } = mountTool('web_search', { query: 'review' }, null)
