@@ -13,6 +13,7 @@
   <div
     v-else-if="shiki.diffRows.value.length > 0"
     class="shiki shiki-diff-grid overflow-auto max-h-96 text-xs font-mono leading-6"
+    :class="{ 'diff-no-edge': !edgeBar }"
   >
     <div class="diff-content">
       <div
@@ -50,8 +51,10 @@ import { useShikiHighlighter } from '@/composables/useShikiHighlighter'
 // attaches a unified diff as UI-only metadata; rows render with gutter line
 // numbers (old for removals, new for additions/context), −/+ markers,
 // whole-row red/green bands with a solid indicator bar at the left edge, and
-// an inline emphasis block on the exact replaced fragments.
-const props = defineProps<{ diff: string, filename: string }>()
+// an inline emphasis block on the exact replaced fragments. edgeBar=false
+// drops the indicator bar (write details opt out — a new file is one solid
+// green wall where the bar reads as noise).
+const props = withDefaults(defineProps<{ diff: string, filename: string, edgeBar?: boolean }>(), { edgeBar: true })
 const shiki = useShikiHighlighter()
 
 // Re-highlight whenever the diff arrives. Input now streams in after the tool
@@ -112,6 +115,9 @@ watch(
 }
 .shiki-diff-grid .diff-row[data-kind='add'] .diff-ln::before {
   background: var(--diff-add-border);
+}
+.shiki-diff-grid.diff-no-edge .diff-ln::before {
+  display: none;
 }
 .shiki-diff-grid .diff-ln,
 .shiki-diff-grid .diff-mk {
