@@ -72,8 +72,8 @@ async function publishComment(github, repo, issue, errors) {
   const previous = comments.find(comment => comment.user?.login === 'github-actions[bot]' && comment.body?.startsWith(marker));
   if (!errors.length && !previous) return;
   const body = errors.length
-    ? `${marker}\n@${issue.user.login} 请按模板修改描述：\n\n${errors.map(error => `- ${error}`).join('\n')}\n\n修改原描述后会自动重新检查。PR 格式通过后才会放行代码 CI。`
-    : `${marker}\n格式检查已通过，已移除 \`needs:format\`。`;
+    ? `${marker}\n@${issue.user.login} please update the description to follow the template:\n\n${errors.map(error => `- ${error}`).join('\n')}\n\nEditing the description triggers another check. Code CI runs only after the PR format passes.`
+    : `${marker}\nThe format check passed. Removed \`needs:format\`.`;
   if (previous?.body === body) return;
   if (previous) await github.rest.issues.updateComment({ ...repo, comment_id: previous.id, body });
   else await github.rest.issues.createComment({ ...repo, issue_number: issue.number, body });
@@ -99,7 +99,7 @@ export async function inspectPR({ github, context, core }, number, { classifyCha
   const statuses = await github.paginate(github.rest.repos.listCommitStatusesForRef, { ...repo, ref: pr.head.sha, per_page: 100 });
   const last = statuses.find(status => status.context === statusContext);
   const state = errors.length ? 'failure' : 'success';
-  const description = `${bodyFingerprint(pr)} ${errors.length ? '请修正正文格式' : '正文格式通过'}`;
+  const description = `${bodyFingerprint(pr)} ${errors.length ? 'Please correct the description format' : 'Description format passed'}`;
   if (last?.state !== state || last?.description !== description) {
     await github.rest.repos.createCommitStatus({ ...repo, sha: pr.head.sha, state, context: statusContext, description,
       target_url: `${context.serverUrl}/${repo.owner}/${repo.repo}/actions/runs/${context.runId}` });
@@ -109,8 +109,8 @@ export async function inspectPR({ github, context, core }, number, { classifyCha
   await publishComment(github, repo, pr, errors);
   await reconcileRuns(github, repo, pr, !errors.length, core);
   if (classifyChanges) {
-    await core.summary.addHeading(`PR #${number}`).addRaw(`格式：${errors.length ? errors.join('；') : '通过'}\n\n原始新增/删除：${pr.additions}/${pr.deletions}\n\n`)
-      .addRaw(classification ? `排除后新增/删除：${classification.additions}/${classification.deletions}；排除 ${classification.ignored} 个文件；${classification.size}；${classification.changes.join(', ')}\n` : '分类失败，保留原 size/change 标签。\n').write();
+    await core.summary.addHeading(`PR #${number}`).addRaw(`Format: ${errors.length ? errors.join('; ') : 'Passed'}\n\nOriginal additions/deletions: ${pr.additions}/${pr.deletions}\n\n`)
+      .addRaw(classification ? `Filtered additions/deletions: ${classification.additions}/${classification.deletions}; Excluded ${classification.ignored} files; ${classification.size}; ${classification.changes.join(', ')}\n` : 'Classification failed; existing size/change labels were preserved.\n').write();
   }
   if (classificationError) throw classificationError;
 }

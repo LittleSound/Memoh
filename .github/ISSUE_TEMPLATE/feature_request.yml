@@ -1,6 +1,6 @@
 ---
 name: Feature Request
-description: 提出功能或改进建议
+description: Suggest a feature or improvement
 title: "[Feature]: "
 labels:
 - feat
@@ -8,8 +8,8 @@ body:
 - type: dropdown
   id: author
   attributes:
-    label: 提交者身份
-    description: 请声明这份提交由人类还是 Agent 编写。
+    label: Author
+    description: Declare whether this contribution was written by a human or an agent.
     options:
     - Human
     - Agent
@@ -18,7 +18,7 @@ body:
 - type: dropdown
   id: type
   attributes:
-    label: 变更类型
+    label: Type
     options:
     - feat
   validations:
@@ -26,37 +26,37 @@ body:
 - type: textarea
   id: description
   attributes:
-    label: 功能描述
+    label: Feature Description
   validations:
     required: true
 - type: textarea
   id: motivation
   attributes:
-    label: 使用场景与动机
+    label: Use Case and Motivation
   validations:
     required: true
 - type: textarea
   id: solution
   attributes:
-    label: 建议方案
+    label: Proposed Solution
   validations:
     required: false
 - type: textarea
   id: alternatives
   attributes:
-    label: 替代方案
+    label: Alternatives Considered
   validations:
     required: false
 - type: textarea
   id: screenshots
   attributes:
-    label: 截图 / 录屏
-    description: 推荐拖入或粘贴实际截图。Agent 应附图；无法截图或不适用时，请具体说明原因和替代验证。
+    label: Screenshots / Recordings
+    description: Drag or paste screenshots here. Agents should attach screenshots or explain why they are unavailable or not applicable, with alternative verification.
   validations:
     required: false
 - type: textarea
   id: additional
   attributes:
-    label: 补充说明
+    label: Additional Context
   validations:
     required: false

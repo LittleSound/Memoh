@@ -3,7 +3,7 @@ import test from 'node:test';
 import { belongsToPR, gate, inspectPR, reconcileRuns, run, syncLabels } from './contribution-governance.mjs';
 import { noHumanQA, bodyFingerprint } from './contribution-policy.mjs';
 
-const body = `## 提交者身份\n- [x] Agent\n## 变更类型\n- [x] bug\n## 变更说明\n修复实际问题\n## 验证方式与结果\n已通过回归测试\n## 截图 / 录屏\n纯后端改动，无界面；使用 API 验证\n## 人工 QA 状态\n- [x] 尚未人工验证\n\n${noHumanQA}`;
+const body = `## Author\n- [x] Agent\n## Type\n- [x] bug\n## Summary\nFix the reported issue\n## Validation\nRegression tests passed\n## Screenshots / Recordings\nBackend-only change without a UI; verified using API requests\n## Human QA\n- [x] Not yet verified by a human\n\n${noHumanQA}`;
 const pr = { number:1,state:'open',head:{sha:'abc',repo:{id:2},ref:'patch'},base:{ref:'main',repo:{id:1}},body,labels:[],user:{login:'author'},changed_files:1,additions:10,deletions:0 };
 const ci = {id:10,path:'.github/workflows/eslint.yml',head_sha:'abc',event:'pull_request',run_attempt:1,pull_requests:[{number:1,head:{sha:'abc'},base:{repo:{id:1}}}]};
 function mock({ runs=[], jobs=[], fresh=pr, statuses=[], files=[{filename:'apps/web/a.vue',additions:10,deletions:0}], comments=[] } = {}) {
@@ -75,13 +75,13 @@ test('classification failure does not invent a format error or remove prior scop
   assert.ok(!m.calls.some(c=>c.name==='addLabels' && c.args.labels.includes('needs:format')));
 });
 test('fixed descriptions update the existing bot comment instead of posting another',async()=>{
-  const m=mock({comments:[{id:5,user:{login:'github-actions[bot]'},body:'<!-- memoh-contribution-format:v1 -->\n旧错误'}]});
+  const m=mock({comments:[{id:5,user:{login:'github-actions[bot]'},body:'<!-- memoh-contribution-format:v1 -->\nPrevious error'}]});
   await inspectPR(m,1);
   assert.equal(m.calls.filter(c=>c.name==='updateComment').length,1);
   assert.equal(m.calls.filter(c=>c.name==='createComment').length,0);
 });
 test('unchanged success is idempotent',async()=>{
-  const m=mock({fresh:{...pr,labels:[{name:'bug'},{name:'size:XS'},{name:'change:web'}]},statuses:[{context:'PR Format',state:'success',description:`${bodyFingerprint(pr)} 正文格式通过`}]});
+  const m=mock({fresh:{...pr,labels:[{name:'bug'},{name:'size:XS'},{name:'change:web'}]},statuses:[{context:'PR Format',state:'success',description:`${bodyFingerprint(pr)} Description format passed`}]});
   await inspectPR(m,1);
   assert.deepEqual(m.calls,[]);
 });

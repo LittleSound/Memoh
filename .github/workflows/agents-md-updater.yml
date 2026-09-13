@@ -19,27 +19,27 @@ jobs:
         Preserve the contribution templates, automated label policy, screenshot evidence requirements,
         and human QA disclosure rules in AGENTS.md. Do not weaken these repository policies.
       pr_body: |
-        ## 提交者身份
+        ## Author
         - [x] Agent
         - [ ] Human
 
-        ## 变更类型
+        ## Type
         - [ ] bug
         - [x] feat
         - [ ] test
 
-        ## 变更说明
-        根据当前仓库结构更新 AGENTS.md 中的开发指引。
+        ## Summary
+        Update the AGENTS.md development guide to reflect the current repository structure.
 
-        ## 验证方式与结果
-        工作流已完成文档更新；尚未运行产品行为验证，请审查文档与代码的一致性。
+        ## Validation
+        The workflow completed the documentation update. Product behavior was not tested; review the guide against the current code.
 
-        ## 截图 / 录屏
-        仅修改开发文档，没有可见产品界面变化。以文档差异审查作为验证。
+        ## Screenshots / Recordings
+        This only changes developer documentation and has no visible product UI. Review the documentation diff for verification.
 
-        ## 人工 QA 状态
-        - [x] 尚未人工验证
-        - [ ] 已获人工确认
+        ## Human QA
+        - [x] Not yet verified by a human
+        - [ ] Confirmed by a human
 
         ⚠️ **No human QA** — this PR has not been verified by a human yet. Remove this line once a human confirms the happy path.
     secrets:

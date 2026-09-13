@@ -7,14 +7,14 @@ import { readLabels, sync } from './sync-labels.mjs';
 
 export function validPR() {
   return readFileSync(new URL('../pull_request_template.md', import.meta.url), 'utf8')
-    .replace('- [ ] Agent', '- [x] Agent').replace('- [ ] bug', '- [x] bug').replace('- [ ] 尚未人工验证', '- [x] 尚未人工验证')
-    .replace('## 变更说明', '## 变更说明\n修复正文变更后 CI 不恢复的问题。')
-    .replace('## 验证方式与结果', '## 验证方式与结果\n已运行控制器回归测试。')
-    .replace('## 截图 / 录屏', '## 截图 / 录屏\n只修改工作流，没有可见产品界面；使用工作流测试验证。');
+    .replace('- [ ] Agent', '- [x] Agent').replace('- [ ] bug', '- [x] bug').replace('- [ ] Not yet verified by a human', '- [x] Not yet verified by a human')
+    .replace('## Summary', '## Summary\nFix CI recovery after a description changes.')
+    .replace('## Validation', '## Validation\nRan the controller regression tests.')
+    .replace('## Screenshots / Recordings', '## Screenshots / Recordings\nOnly workflows change; there is no visible product UI. Verified with workflow tests.');
 }
 function issue(type, author = 'Human') {
   const fields = { bug: ['bug', 'steps', 'expected', 'version'], feat: ['feature', 'motivation'], help: ['help', 'goal', 'attempts', 'environment'] };
-  return `### 提交者身份\n${author}\n\n### 变更类型\n${type}\n\n` + fields[type].map(key => `### ${headings[key]}\n可复现的具体说明`).join('\n\n');
+  return `### Author\n${author}\n\n### Type\n${type}\n\n` + fields[type].map(key => `### ${headings[key]}\nSpecific reproducible details`).join('\n\n');
 }
 
 test('PR template can be completed and enforces unique identity/type choices', () => {
@@ -28,7 +28,7 @@ test('CLI issue bodies obey all three templates; agents explain missing screensh
   for (const type of ['bug', 'feat', 'help']) {
     assert.deepEqual(validate(issue(type), false).errors, []);
     assert.ok(validate(issue(type, 'Agent'), false).errors.length);
-    assert.deepEqual(validate(issue(type, 'Agent') + '\n\n### 截图 / 录屏\n纯 API 问题，无界面可截图；附有请求日志。', false).errors, []);
+    assert.deepEqual(validate(issue(type, 'Agent') + '\n\n### Screenshots / Recordings\nAPI-only issue with no visible interface; request logs are attached.', false).errors, []);
   }
 });
 test('fenced examples and comments cannot forge headings or identity', () => {
@@ -39,14 +39,14 @@ test('fenced examples and comments cannot forge headings or identity', () => {
   assert.ok(validate(validPR().replace('- [x] Agent', '~~~\n- [x] Agent\n~~~'), true).errors.length);
 });
 test('fenced reproduction text is allowed and duplicate headings are rejected', () => {
-  assert.deepEqual(validate(issue('bug').replace('可复现的具体说明', '```sh\nmemoh start\n```'), false).errors, []);
-  assert.ok(validate(validPR() + '\n## 变更类型\n- [x] test', true).errors.some(error => error.includes('重复')));
+  assert.deepEqual(validate(issue('bug').replace('Specific reproducible details', '```sh\nmemoh start\n```'), false).errors, []);
+  assert.ok(validate(validPR() + '\n## Type\n- [x] test', true).errors.some(error => error.includes('Duplicate')));
 });
 test('human QA requires disclosure or explicit confirmation record', () => {
   assert.ok(validate(validPR().replace(noHumanQA, ''), true).errors.length);
-  let human = validPR().replace('- [x] 尚未人工验证', '- [ ] 尚未人工验证').replace('- [ ] 已获人工确认', '- [x] 已获人工确认').replace(noHumanQA, '');
+  let human = validPR().replace('- [x] Not yet verified by a human', '- [ ] Not yet verified by a human').replace('- [ ] Confirmed by a human', '- [x] Confirmed by a human').replace(noHumanQA, '');
   assert.ok(validate(human, true).errors.length);
-  human += '\n@maintainer 已在 PR review 确认 happy path。';
+  human += '\n@maintainer confirmed the happy path in the PR review.';
   assert.deepEqual(validate(human, true).errors, []);
 });
 test('all size boundaries use the larger total, never the sum', () => {
@@ -90,7 +90,7 @@ test('body fingerprint changes with the head, body and target branch', () => {
 test('issue forms produce valid GitHub-rendered markdown after required fields are completed', () => {
   for (const file of ['bug_report','feature_request','help']) {
     const form = JSON.parse(execFileSync('ruby', ['-ryaml','-rjson','-e','puts YAML.load_file(ARGV[0]).to_json', new URL(`../ISSUE_TEMPLATE/${file}.yml`, import.meta.url).pathname], { encoding:'utf8' }));
-    const body = form.body.map(field => `### ${field.attributes.label}\n\n${field.id === 'author' ? 'Human' : field.id === 'type' ? form.labels[0] : field.validations.required ? '具体描述与真实验证信息' : '_No response_'}`).join('\n\n');
+    const body = form.body.map(field => `### ${field.attributes.label}\n\n${field.id === 'author' ? 'Human' : field.id === 'type' ? form.labels[0] : field.validations.required ? 'Specific details and actual verification results' : '_No response_'}`).join('\n\n');
     assert.deepEqual(validate(body, false).errors, []);
   }
 });

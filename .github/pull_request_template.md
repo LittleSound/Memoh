@@ -1,37 +1,37 @@
-## 提交者身份
+## Author
 
-<!-- 恰好选择一项。通过 CLI/API 创建 PR 时也需要遵守此模板。 -->
+<!-- Select exactly one option. PRs created through the CLI or API must also follow this template. -->
 - [ ] Human
 - [ ] Agent
 
-## 变更类型
+## Type
 
-<!-- 恰好选择一项。文档、配置、依赖变更按目的选择 bug 或 feat。 -->
+<!-- Select exactly one option. Choose bug or feat for documentation, configuration, or dependency changes according to their purpose. -->
 - [ ] bug
 - [ ] feat
 - [ ] test
 
-## 变更说明
+## Summary
 
-<!-- 描述要解决的问题，以及修改后的行为。 -->
+<!-- Describe the problem and the resulting behavior. -->
 
-## 关联 Issue
+## Related Issues
 
-<!-- 可选，例如 Closes #123。 -->
+<!-- Optional, for example Closes #123. -->
 
-## 验证方式与结果
+## Validation
 
-<!-- 写明实际执行的验证及结果；未执行时说明原因。 -->
+<!-- Describe the validation actually performed and its results. Explain any checks that were not run. -->
 
-## 截图 / 录屏
+## Screenshots / Recordings
 
-<!-- 推荐上传具体截图。Agent 涉及可见行为时应通过浏览器或 Computer Use 实际操作并截图。
-无法截图或没有可见界面变化时，请填写具体原因和替代验证；本地文件路径不算已上传证据。 -->
+<!-- Upload screenshots where useful. Agents changing visible behavior should use browser tools or Computer Use to exercise the change and capture screenshots.
+If screenshots are unavailable or the change has no visible interface, explain why and describe alternative verification. Local file paths are not uploaded evidence. -->
 
-## 人工 QA 状态
+## Human QA
 
-<!-- 恰好选择一项。已获人工确认时注明确认人和记录，移除末尾声明。 -->
-- [ ] 尚未人工验证
-- [ ] 已获人工确认
+<!-- Select exactly one option. If a human has confirmed QA, identify the reviewer and confirmation record, and remove the disclosure at the end. -->
+- [ ] Not yet verified by a human
+- [ ] Confirmed by a human
 
 ⚠️ **No human QA** — this PR has not been verified by a human yet. Remove this line once a human confirms the happy path.

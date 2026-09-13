@@ -1,137 +1,137 @@
-# Issue、PR 与标签自动化
+# Issue, PR, and Label Governance
 
-本规范允许贡献者先提交，再由 Actions 检查正文、同步标签和提示修改。PR 格式通过后才运行适用的 lint、测试和构建；首次贡献者的待审批 CI 由机器人自动批准。工作流批准不等于代码 review、合并或发布授权。
+Contributors can submit an issue or PR before format checks run. GitHub Actions validates the description, synchronizes labels, and requests corrections. Eligible PR lint, test, and build jobs run only after the format check passes. A separate controller approves pending first-time contributor workflow runs automatically. Workflow approval does not approve a code review, merge, or release.
 
-## 标签配置
+## Label Configuration
 
-`.github/labels.json` 是名称、颜色、描述的唯一来源。GitHub 不会原生读取这个文件；`Sync labels` 工作流在 main 上配置变更时调用 GitHub API，只创建或更新，不自动删除。维护者也可以运行：
+`.github/labels.json` is the source of truth for label names, colors, and English descriptions. GitHub does not read this file natively. The `Sync labels` workflow applies changes from main through the GitHub API. Routine synchronization creates or updates labels; it never deletes them.
 
 ```sh
-# 默认只展示配置
+# Preview the configuration without changing GitHub
 node .github/scripts/sync-labels.mjs felinics/Memoh
-# 应用配置
+# Apply the configuration
 node .github/scripts/sync-labels.mjs felinics/Memoh --apply
 ```
 
-保留以下 14 个标签：
+The repository maintains these 14 labels:
 
-| 分组 | 标签 | 颜色 |
+| Group | Labels | Color |
 | --- | --- | --- |
-| 类型 | `bug` | `D73A4A` |
-| 类型 | `feat` | `2DA44E` |
-| 类型 | `test` | `8250DF` |
-| 类型 | `help` | `0E8A8A` |
-| 规模 | `size:XS`、`size:S`、`size:M`、`size:L`、`size:XL` | 统一 `0969DA` |
-| 范围 | `change:web`、`change:desktop`、`change:migrations`、`change:server` | 统一 `D4C5F9` |
-| 修正 | `needs:format` | `D97706` |
+| Type | `bug` | `D73A4A` |
+| Type | `feat` | `2DA44E` |
+| Type | `test` | `8250DF` |
+| Type | `help` | `0E8A8A` |
+| Size | `size:XS`, `size:S`, `size:M`, `size:L`, `size:XL` | `0969DA` for all sizes |
+| Scope | `change:web`, `change:desktop`, `change:migrations`, `change:server` | `D4C5F9` for all scopes |
+| Correction | `needs:format` | `D97706` |
 
-Issue 使用 `bug`、`feat` 或 `help`；PR 在 `bug`、`feat`、`test` 中选择一个主要类型。文档、配置、依赖修改按目的选择 bug 或 feat，专门修改测试时使用 test。身份在正文声明，不增加身份标签。
+Issues use `bug`, `feat`, or `help`. PRs select exactly one primary type from `bug`, `feat`, or `test`. Classify documentation, configuration, and dependency changes as bug or feat according to their purpose; use test for changes dedicated to tests. Author identity belongs in the description, not in a label.
 
-### Size
+### Size Calculation
 
-使用 PR 相对目标分支的整体文件差异，排除生成文件后分别累计新增行数 A 和删除行数 D，依据 `max(A, D)` 分类，绝不使用 A+D。每个 PR 恰好保留一个 size 标签。
+Use the complete PR diff against its target branch. After excluding generated files, total additions as A and deletions as D. Classify by `max(A, D)`, never A+D. Each PR has exactly one size label.
 
-| 标签 | `max(A, D)` |
+| Label | `max(A, D)` |
 | --- | --- |
 | `size:XS` | 0–49 |
 | `size:S` | 50–499 |
 | `size:M` | 500–999 |
 | `size:L` | 1000–3000 |
-| `size:XL` | 3001 及以上 |
+| `size:XL` | 3001 or more |
 
-例如新增 400、删除 400 是 S；新增 80、删除 1200 是 L。仅生成文件或没有文本行数的变更为 XS。二进制使用 GitHub 返回的行数，不虚构行数。
+For example, 400 additions and 400 deletions is S; 80 additions and 1200 deletions is L. A change containing only excluded files or no text lines is XS. Binary files use the line counts returned by GitHub; the classifier does not invent line counts.
 
-排除清单维护在共享 policy 中：
+The shared policy excludes:
 
-- 所有目录中的 `pnpm-lock.yaml`、`package-lock.json`、`yarn.lock`、`Cargo.lock`、`go.sum`、`skills-lock.json`。
-- `spec/docs.go`、`spec/swagger.json`、`spec/swagger.yaml`。
-- `packages/sdk/src/**`、`internal/db/postgres/sqlc/**`、`**/*.pb.go`。
-- `packages/icons/src/**`，但 `icons/Codex.vue`、`icons/CodexColor.vue`、`icons/Misskey.vue` 正常计数。
-- `apps/web/src/components/file-manager/seti/vs-seti-icon-theme.json`。
+- `pnpm-lock.yaml`, `package-lock.json`, `yarn.lock`, `Cargo.lock`, `go.sum`, and `skills-lock.json` in any directory.
+- `spec/docs.go`, `spec/swagger.json`, and `spec/swagger.yaml`.
+- `packages/sdk/src/**`, `internal/db/postgres/sqlc/**`, and `**/*.pb.go`.
+- `packages/icons/src/**`, except the handwritten `icons/Codex.vue`, `icons/CodexColor.vue`, and `icons/Misskey.vue` files.
+- `apps/web/src/components/file-manager/seti/vs-seti-icon-theme.json`.
 
-迁移 SQL、测试、文档、配置和图标源文件正常计数。只有文件重命名前后都属于排除清单时才排除，防止将手写代码移入生成目录而隐藏修改规模。运行摘要展示原始与排除后的新增/删除行数、排除文件数及标签。
+Migration SQL, tests, documentation, configuration, and icon source files count normally. A renamed file is excluded only when both its old and new paths are excluded, so moving handwritten code into a generated directory does not hide its size. The run summary reports original and filtered additions/deletions, the number of excluded files, and the resulting labels.
 
-### Change
+### Scope Classification
 
-按实际路径匹配，支持多标签。新增、修改、删除参与判断；重命名检查旧路径和新路径。生成文件仍参与范围分类。
+Scope labels reflect changed paths and can coexist. Added, modified, and deleted files participate; renames check both paths. Generated files still participate in scope classification.
 
-| 标签 | 路径 |
+| Label | Paths |
 | --- | --- |
-| `change:web` | `apps/web/**`、`packages/ui` gitlink 或子路径、`packages/icons/**`、`packages/config/**`、`packages/sdk/**`、`patches/**` |
-| `change:desktop` | `apps/desktop/**`、`packages/config/**` |
+| `change:web` | `apps/web/**`, the `packages/ui` gitlink or its contents, `packages/icons/**`, `packages/config/**`, `packages/sdk/**`, `patches/**` |
+| `change:desktop` | `apps/desktop/**`, `packages/config/**` |
 | `change:migrations` | `db/**/migrations/**` |
-| `change:server` | `cmd/**`、`internal/**`、`conf/**`、`db/**`、`spec/**`、根目录 `go.mod`、`go.sum`、`sqlc.yaml`、`openapi-ts.config.ts` |
+| `change:server` | `cmd/**`, `internal/**`, `conf/**`, `db/**`, `spec/**`, and root `go.mod`, `go.sum`, `sqlc.yaml`, `openapi-ts.config.ts` |
 
-根目录 `package.json`、`pnpm-lock.yaml`、`pnpm-workspace.yaml`、`eslint.config.mjs`、`tsconfig.json`、`vitest.config.ts` 同时触发 Web 与 Desktop。迁移同时触发 migrations 与 server。未匹配的文档或治理文件可以没有 change 标签，不推断间接依赖。修改范围标签不作为 CI 放行凭据。
+Root `package.json`, `pnpm-lock.yaml`, `pnpm-workspace.yaml`, `eslint.config.mjs`, `tsconfig.json`, and `vitest.config.ts` trigger both Web and Desktop. Migrations trigger both migrations and server. Unmatched documentation or governance files may have no scope label. The classifier does not infer indirect dependencies, and labels are not CI authorization credentials.
 
-## 模板和截图
+## Templates and Evidence
 
-Issue 提供 Bug Report、Feature Request、Help 三个表单，保留空白 Issue 入口。开头必选 Human/Agent 身份和模板对应的类型；删除旧 Area 和 Channel 字段。通过 CLI、API 或空白入口提交时，仍须保留对应章节。
+Issue forms include Bug Report, Feature Request, and Help. The blank issue entry remains available. Each form starts with required Human/Agent identity and its corresponding type. The former Area and Channel fields are removed. CLI, API, and blank submissions must preserve the corresponding sections.
 
-- Bug：问题描述、复现步骤、预期与实际行为、版本必填。
-- Feature：功能描述、使用场景与动机必填。
-- Help：遇到的问题、希望达到的目标、已经尝试的方法、版本与运行环境必填。
-- 三者均提供截图/录屏和补充说明；Bug、Help 还提供日志。
+- Bug requires Bug Description, Steps to Reproduce, Expected and Actual Behavior, and Version.
+- Feature requires Feature Description and Use Case and Motivation.
+- Help requires Problem, Desired Outcome, What You Have Tried, and Version and Environment.
+- All forms offer Screenshots / Recordings and Additional Context. Bug and Help also offer Logs.
 
-PR 默认模板要求身份、类型各勾选一项，填写变更说明、验证方式与结果、截图/录屏章节、人工 QA 状态；关联 Issue 可选。标题格式不在本轮自动校验范围内。自由正文允许中文或英文，章节和选项使用模板中的稳定名称。
+The PR template requires exactly one Author and Type choice, Summary, Validation, Screenshots / Recordings, and Human QA. Related Issues is optional. PR title enforcement is outside this workflow. Templates, documentation, and automated messages are written in English. Free-form contributor responses may use other languages, but section names and choices must match the English template.
 
-空白、注释、占位内容、未勾选或多选均不通过；代码块内的示例不能冒充正文结构或选择项。不会用字数判断内容质量。
+Empty sections, placeholders, missing selections, and multiple selections fail validation. Fenced examples cannot supply outer section headings or choices. Content quality is not judged by a minimum word count.
 
-截图推荐通过 GitHub 附件上传。Agent 涉及可见行为时应尽量用浏览器或 Computer Use 实际操作和截图；无法截图、无法上传或不适用时说明具体原因与替代验证。本地文件路径不是已上传证据。
+Upload screenshots as GitHub-accessible attachments. For visible behavior, agents should use browser tools or Computer Use to exercise the change and capture evidence. If capture or upload is unavailable or not applicable, explain why and describe alternative verification. Local file paths are not uploaded evidence.
 
-尚未获得人工确认的 PR 必须勾选“尚未人工验证”，并在描述末尾保留原有 No human QA 声明。获得人工确认后勾选“已获人工确认”、注明确认人及记录、删除声明。Agent 自己测试或截图不算人工 QA，Action 只能检查声明结构，无法证明人工验证实际发生。
+Until a human confirms QA, select `Not yet verified by a human` and keep the existing No human QA disclosure at the end of the PR description. After confirmation, select `Confirmed by a human`, identify the reviewer and confirmation record, and remove the disclosure. Agent tests and screenshots do not count as human QA. Automation validates the declaration's structure, not whether human verification actually occurred.
 
-## 工作流行为
+## Workflow Behavior
 
-`Contribution governance` 使用默认分支的可信脚本。PR 通过 `pull_request_target`，Issue 通过 `issues` 触发；控制器不检出、不执行 PR 代码。它读取当前 API 正文，校验格式，同步类型标签，并为 PR 计算 size/change。
+`Contribution governance` uses trusted default-branch scripts. PR events use `pull_request_target`; issues use `issues`. The controller does not check out or execute PR code. It reads the current API description, validates it, synchronizes the type label, and calculates PR size/scope labels.
 
-格式不通过时添加 `needs:format`，以一条固定标识的机器人评论 @ 作者并列出缺项。修改原描述后自动重新检查；修正后移除标签并更新原评论，不反复新建评论。合法的首次提交不额外发一条“已通过”评论。
+An invalid description receives `needs:format` and one identifiable bot comment mentioning the author and listing corrections. Editing the description triggers another check. Once corrected, the label is removed and the existing comment is updated instead of posting another one. An initially valid submission does not receive an extra success comment.
 
-### CI 门槛和自动审批
+### CI Gate and Automatic Approval
 
-控制器将结果写为 PR 当前 head SHA 的 `PR Format` 状态，摘要包含 SHA、目标分支与正文的指纹。普通 PR CI 的独立轻量 job 使用本次 PR 合并提交中的规则，读取最新正文并验证其格式及当前 head；业务 jobs 依赖该 job。该 job 只读且不执行写操作，不依赖控制器状态，因此引入治理流程的首个 PR 也能验证。高权限控制器仍独立使用默认分支规则决定标签与运行批准。格式未通过时不会安装依赖、运行 lint、测试或构建。GitHub 可以先创建 workflow run 或执行轻量入口检查。
+The controller records `PR Format` on the current PR head SHA, including a fingerprint of the head, target branch, and description. Separately, ordinary read-only PR CI validates the latest description using the rules in the PR merge commit and checks that the head is current. Code jobs depend on this lightweight gate. It does not require a controller status, so the PR introducing governance can itself run CI before merging. The privileged controller independently uses default-branch rules for labels and approval.
 
-CI 仍使用现有文件路径筛选；push、release 和维护者直接 workflow_dispatch 的原有行为不经过 PR 格式门槛。Docker 共享构建工作流分别由只读 PR 入口和发布入口调用，PR 入口不传入发布 secrets，固定不发布。
+Invalid format prevents dependency installation, lint, tests, and builds. GitHub may still create a workflow run or execute the lightweight gate. Existing CI path filters remain in effect. Push, release, and maintenance workflow_dispatch behavior does not use the PR gate. Docker shares build logic between read-only PR and publishing entry points; the PR caller passes no publishing secrets and fixes publishing to false.
 
-控制器自动批准普通 fork PR 待审批运行，保留仓库 `first_time_contributors` 设置。只处理明确关联当前仓库、当前 PR 和当前 head 的白名单工作流：ESLint、Go、Rust、Runtime、Migrations、Installer、Electron、Docker PR 和贡献规则测试。不会放行发布、部署、文档更新等维护工作流。
+The controller retains the repository's `first_time_contributors` approval setting and approves eligible pending fork PR runs. It checks the repository, PR, current head, and workflow allowlist: ESLint, Go, Rust, Runtime, Migrations, Installer, Electron, Docker PR, and contribution policy tests. Publishing, deployment, and documentation maintenance workflows are not automatically approved.
 
-- 使用 `workflow_run` 的 requested/completed 事件补偿时序，每五分钟还有一次补偿扫描。
-- 正文修正后只重跑格式门槛失败且其他任务未执行的运行，不重跑实际测试失败。
-- 新提交重新检查，旧 head 的通过状态不能复用。
-- 正文再次不合规时取消当前活跃 CI，记录被控制器取消的运行及 attempt；修正后可恢复该 attempt，人工取消的运行不会被自动恢复。
-- 调度扫描包括新规则上线后创建的 PR，以及当前提交已经有治理状态的旧 PR。未接入规则的旧 PR 不被批量评论。
-- 使用 GITHUB_TOKEN 创建 PR 时，事件可能不触发其他工作流；定时扫描仍会校验和标注。它不能凭空创建不存在的普通 pull_request CI run；这种机器人 PR 如需自动启动全部 CI，须由能够产生正常 PR 事件的 GitHub App 创建，或维护者对其新增提交。当前模型同步和文档更新正文均遵守模板，无格式豁免。
+- `workflow_run` requested/completed events reconcile timing differences, with a five-minute scheduled reconciliation as a fallback.
+- After a description is corrected, only runs blocked by format with no executed code jobs are retried. Actual test failures are not retried automatically.
+- New commits require a new check; an old head's result is not reused.
+- If the description becomes invalid, the controller cancels active CI and records the run and attempt. It can recover that attempt after correction; manually cancelled runs are not automatically resumed.
+- Scheduled scans include PRs created after governance was introduced and older PRs whose current head already has a governance status. Untouched older PRs are not flooded with comments.
+- PRs created with GITHUB_TOKEN may not trigger other workflows. Reconciliation can still validate and label them, but cannot create a missing ordinary pull_request CI run. To start all CI automatically, those PRs need an authoring GitHub App that produces normal PR events, or a subsequent maintainer push. Model-sync and documentation-update PR bodies follow the template without exemptions.
 
-控制任务拥有评论、标签、状态和 Actions 写权限，但不执行贡献者代码。代码 CI 使用 GitHub 托管 runner、只读 token；PR 入口不接收 secrets，检出不持久化 token。格式合规不意味着外部代码可信；运行批准仅表示同意消耗 CI 资源。
+Control jobs may write comments, labels, statuses, and workflow approvals, but never execute contributor code. Code CI uses GitHub-hosted runners and read-only tokens. PR callers receive no secrets, and checkout does not persist credentials. Format compliance does not establish that external code is trustworthy; automatic workflow approval authorizes CI resource use only.
 
-API 操作有有限重试；无法获得完整文件列表时保持旧 size/change 标签并明确报错，不把基础设施错误标为正文不合规。GitHub 文件列表超过上限时同样报告分类失败。审批权限失败会导致控制工作流失败，不静默宣称 CI 已放行。
+API operations have bounded retries. An incomplete file list preserves existing size/scope labels and reports a classification error instead of claiming the description is invalid. Exceeding GitHub's file-list limit has the same behavior. Approval permission failures fail the controller visibly rather than claiming CI was released.
 
-### 维护与手动补偿
+### Maintenance
 
-维护者可以在 `Contribution governance` 的 workflow_dispatch 输入 PR 编号，重新计算该 PR；输入为空扫描新开放 PR。`Sync labels` 支持手动触发，始终只在主仓库 main 上写入标签。
+Maintainers can supply a PR number to `Contribution governance` through workflow_dispatch to reconcile it. An empty input scans eligible open PRs. `Sync labels` also supports manual dispatch and writes only from main in the primary repository.
 
-只读格式门槛可以在本次 PR 内运行；高权限标签与审批控制器必须先合入 main 才能启用，不能把只读门槛通过当作自动批准流程已验收。PR 修改 CI YAML 本身仍接受正常代码审查；格式检查不是恶意 workflow 修改的隔离机制。
+The read-only format gate works inside this PR. The privileged label/approval controller becomes active only after merging into main. A passing read-only gate does not establish that automatic fork approval works. Changes to workflow YAML still require normal code review; format validation is not an isolation mechanism for malicious workflow changes.
 
-## 迁移和验证
+## Migration and Verification
 
-首次迁移脚本默认只读，显式 `--apply` 才写入：
+The initial migration script is read-only by default; `--apply` explicitly enables writes:
 
 ```sh
 node .github/scripts/migrate-labels.mjs felinics/Memoh /absolute/backup/directory
 node .github/scripts/migrate-labels.mjs felinics/Memoh /absolute/backup/directory --apply
 ```
 
-脚本先保存旧标签、历史关联和开放 PR 的标签/分类快照，然后将旧 size 标签重命名、统一配置、把历史 `bug/*` 和 `feat/*` 补到基础类型，再删除明确列出的废弃标签。它不猜测 question/documentation 等历史类型，不发评论。最后重新计算开放 PR 的 size/change；已关闭 PR 不重新计算规模。改动中的 PR 通过 SHA 检查跳过。
+Before writing, the script saves label definitions, historical associations, and open-PR labels/classifications. It renames old size labels, applies the configuration, adds base bug/feat labels to historical regional classifications, and removes explicitly listed obsolete labels. It does not guess historical types from question/documentation labels or post comments. Finally, it recalculates size/scope labels for open PRs, skipping any PR whose head changed. Closed PR sizes are not recalculated.
 
-备份用于人工审查和恢复旧关联；删除后重新创建的标签不会保留原 GitHub label ID。日常配置同步不调用删除逻辑。
+The backup supports manual inspection and restoration of associations. Recreating a deleted label does not preserve its original GitHub label ID. Routine configuration synchronization does not invoke deletion logic.
 
-本地验证：
+Local verification:
 
 ```sh
 node --test .github/scripts/*.test.mjs
-# 可使用 actionlint 检查全部 workflow
+# Use actionlint to validate workflow configuration.
 ```
 
-测试覆盖表单渲染、身份/类型、截图说明、QA 声明、代码块/重复章节、size 边界和排除、重命名与子模块、标签幂等、评论复用、旧提交保护、自动审批和格式失败恢复。
+Tests cover rendered forms, identity/type choices, screenshot explanations, QA declarations, fenced examples, duplicate sections, size boundaries/exclusions, renames, submodules, idempotent labels, comment reuse, current-head checks, automatic approval, format failure recovery, and the initial rollout without a main-branch controller.
 
-上线验收还必须使用真实首次贡献者的 fork PR：不合规时只有格式检查和提醒，修正正文后自动批准并执行适用 CI，全程无需维护者点击 Approve。修改正文、推送新提交、控制器取消恢复、真实测试失败均需分别验证。此项不能由模拟 API 测试或静态检查代替。
+Live rollout verification must also use a real first-time contributor's fork PR. Invalid format should produce only format feedback; correcting the description should release eligible CI without a maintainer clicking Approve. Verify new commits, description edits, controller cancellation/recovery, and actual test failures separately. Mocked API tests and static validation do not replace this acceptance check.

@@ -2,10 +2,10 @@ import { createHash } from 'node:crypto';
 
 export const noHumanQA = '⚠️ **No human QA** — this PR has not been verified by a human yet. Remove this line once a human confirms the happy path.';
 export const headings = {
-  author: '提交者身份', type: '变更类型', summary: '变更说明', validation: '验证方式与结果',
-  screenshots: '截图 / 录屏', qa: '人工 QA 状态', bug: '问题描述', steps: '复现步骤',
-  expected: '预期与实际行为', version: '版本', feature: '功能描述', motivation: '使用场景与动机',
-  help: '遇到的问题', goal: '希望达到的目标', attempts: '已经尝试的方法', environment: '版本与运行环境',
+  author: 'Author', type: 'Type', summary: 'Summary', validation: 'Validation',
+  screenshots: 'Screenshots / Recordings', qa: 'Human QA', bug: 'Bug Description', steps: 'Steps to Reproduce',
+  expected: 'Expected and Actual Behavior', version: 'Version', feature: 'Feature Description', motivation: 'Use Case and Motivation',
+  help: 'Problem', goal: 'Desired Outcome', attempts: 'What You Have Tried', environment: 'Version and Environment',
 };
 export const typeLabels = ['bug', 'feat', 'test', 'help'];
 export const ciWorkflows = ['eslint.yml', 'go-ci.yml', 'rust-ci.yml', 'runtime-ci.yml', 'migrations.yml', 'install-ci.yml', 'electron-ci.yml', 'docker-pr.yml', 'contribution-policy-ci.yml'];
@@ -26,7 +26,7 @@ export function sections(body = '') {
     const match = line.match(/^#{2,3}\s+(.+?)\s*#*$/);
     if (match) {
       heading = match[1].trim();
-      if (result.has(heading)) throw new Error(`章节重复：${heading}`);
+      if (result.has(heading)) throw new Error(`Duplicate section: ${heading}`);
       result.set(heading, { content: [], plain: [], choices: [] });
     } else if (heading) {
       result.get(heading).content.push(line);
@@ -45,14 +45,14 @@ export function validate(body, isPR) {
   const content = key => parts.get(headings[key])?.content.join('\n').trim() ?? '';
   function required(key) {
     const value = content(key);
-    if (!value || /^(?:_?No response_?|N\/?A|无|待填写|请填写[。.]?|\.\.\.)$/i.test(value)) errors.push(`请填写「${headings[key]}」。`);
+    if (!value || /^(?:_?No response_?|N\/?A|TBD|TODO|Please fill in[.]?|无|待填写|请填写[。.]?|\.\.\.)$/i.test(value)) errors.push(`Please complete "${headings[key]}".`);
   }
   function choice(key, allowed) {
     const field = parts.get(headings[key]);
     const plain = field?.plain.join('\n').trim() ?? '';
     const values = isPR ? (field?.choices ?? []) : (plain ? [plain] : []);
     if (values.length !== 1 || !allowed.includes(values[0])) {
-      errors.push(`「${headings[key]}」必须选择一项：${allowed.join(' / ')}。`);
+      errors.push(`Select exactly one option for "${headings[key]}": ${allowed.join(' / ')}.`);
       return undefined;
     }
     return values[0];
@@ -61,12 +61,12 @@ export function validate(body, isPR) {
   const type = choice('type', isPR ? ['bug', 'feat', 'test'] : ['bug', 'feat', 'help']);
   if (isPR) {
     ['summary', 'validation', 'screenshots', 'qa'].forEach(required);
-    const qa = choice('qa', ['尚未人工验证', '已获人工确认']);
-    if (qa === '尚未人工验证' && !(body ?? '').trimEnd().endsWith(noHumanQA)) errors.push('尚未人工验证时，请在描述末尾保留 No human QA 声明。');
-    if (qa === '已获人工确认') {
+    const qa = choice('qa', ['Not yet verified by a human', 'Confirmed by a human']);
+    if (qa === 'Not yet verified by a human' && !(body ?? '').trimEnd().endsWith(noHumanQA)) errors.push('Keep the No human QA disclosure at the end of the description until a human confirms QA.');
+    if (qa === 'Confirmed by a human') {
       const evidence = content('qa').replace(/^\s*-\s+\[[ xX]\].*$/gm, '').replace(noHumanQA, '').trim();
-      if (!evidence || /^(?:待填写|N\/?A)$/i.test(evidence)) errors.push('请在「人工 QA 状态」注明确认人及确认记录。');
-      if ((body ?? '').includes(noHumanQA)) errors.push('已获人工确认时，请移除 No human QA 声明。');
+      if (!evidence || /^(?:TBD|TODO|待填写|N\/?A)$/i.test(evidence)) errors.push('Identify the reviewer and confirmation record in "Human QA".');
+      if ((body ?? '').includes(noHumanQA)) errors.push('Remove the No human QA disclosure once a human has confirmed QA.');
     }
   } else {
     const fields = { bug: ['bug', 'steps', 'expected', 'version'], feat: ['feature', 'motivation'], help: ['help', 'goal', 'attempts', 'environment'] };

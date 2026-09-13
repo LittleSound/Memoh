@@ -1,6 +1,6 @@
 ---
 name: Help
-description: 寻求安装、配置或使用帮助
+description: Get help with installation, configuration, or usage
 title: "[Help]: "
 labels:
 - help
@@ -8,8 +8,8 @@ body:
 - type: dropdown
   id: author
   attributes:
-    label: 提交者身份
-    description: 请声明这份提交由人类还是 Agent 编写。
+    label: Author
+    description: Declare whether this contribution was written by a human or an agent.
     options:
     - Human
     - Agent
@@ -18,7 +18,7 @@ body:
 - type: dropdown
   id: type
   attributes:
-    label: 变更类型
+    label: Type
     options:
     - help
   validations:
@@ -26,44 +26,44 @@ body:
 - type: textarea
   id: description
   attributes:
-    label: 遇到的问题
+    label: Problem
   validations:
     required: true
 - type: textarea
   id: goal
   attributes:
-    label: 希望达到的目标
+    label: Desired Outcome
   validations:
     required: true
 - type: textarea
   id: attempts
   attributes:
-    label: 已经尝试的方法
+    label: What You Have Tried
   validations:
     required: true
 - type: textarea
   id: environment
   attributes:
-    label: 版本与运行环境
+    label: Version and Environment
   validations:
     required: true
 - type: textarea
   id: logs
   attributes:
-    label: 日志
-    description: 如有相关错误，请粘贴日志并移除令牌等敏感信息。
+    label: Logs
+    description: Paste relevant error logs and remove tokens or other sensitive information.
   validations:
     required: false
 - type: textarea
   id: screenshots
   attributes:
-    label: 截图 / 录屏
-    description: 推荐拖入或粘贴实际截图。Agent 应附图；无法截图或不适用时，请具体说明原因和替代验证。
+    label: Screenshots / Recordings
+    description: Drag or paste screenshots here. Agents should attach screenshots or explain why they are unavailable or not applicable, with alternative verification.
   validations:
     required: false
 - type: textarea
   id: additional
   attributes:
-    label: 补充说明
+    label: Additional Context
   validations:
     required: false
