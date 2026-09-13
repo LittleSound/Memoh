@@ -94,8 +94,9 @@ test('issues use current API body, not stale event body',async()=>{
   assert.ok(m.calls.find(c=>c.name==='addLabels').args.labels.includes('needs:format'));
 });
 
-test('CI gate accepts only matching trusted status and current body', async () => {
-  const m=mock({statuses:[{context:'PR Format',state:'success',description:`${bodyFingerprint(pr)} 正文格式通过`,creator:{login:'github-actions[bot]'}}]});
+test('read-only CI validates a new policy before its controller exists on main', async () => {
+  const m=mock();
+  m.github.paginate=async()=>{throw new Error('Bootstrap must not depend on controller statuses');};
   m.context.payload={pull_request:pr};
   await gate(m);
   assert.deepEqual(m.calls,[]);
@@ -106,4 +107,11 @@ test('CI gate rejects obsolete head or invalid body before executing code jobs',
     await assert.rejects(gate(m));
     assert.deepEqual(m.calls,[]);
   }
+});
+
+test('read-only gate rejects a description edited during validation', async () => {
+  const m=mock();m.context.payload={pull_request:pr};
+  let reads=0;
+  m.github.rest.pulls.get=async()=>({data:++reads===1?pr:{...pr,body:''}});
+  await assert.rejects(gate(m),/PR changed/);
 });

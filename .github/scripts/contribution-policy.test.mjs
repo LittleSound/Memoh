@@ -123,3 +123,14 @@ test('every ordinary PR CI has a format dependency before executable jobs', () =
     }
   }
 });
+
+test('read-only gate checks out the PR while the privileged controller checks out main', () => {
+  const load=file=>JSON.parse(execFileSync('ruby',['-ryaml','-rjson','-e','puts YAML.load_file(ARGV[0]).to_json',new URL(`../workflows/${file}`,import.meta.url).pathname],{encoding:'utf8'}));
+  const gate=load('contribution-format.yml');
+  const checkout=gate.jobs.check.steps.find(step=>step.uses?.startsWith('actions/checkout@'));
+  assert.equal(checkout.with.ref,undefined);
+  assert.equal(checkout.with['persist-credentials'],false);
+  assert.ok(Object.values(gate.permissions).every(permission=>permission==='read'));
+  const controller=load('contribution-governance.yml');
+  assert.ok(controller.jobs.govern.steps.find(step=>step.uses?.startsWith('actions/checkout@')).with.ref.includes('default_branch'));
+});

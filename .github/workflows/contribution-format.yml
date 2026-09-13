@@ -3,7 +3,6 @@ on:
   workflow_call:
 permissions:
   contents: read
-  statuses: read
   pull-requests: read
 jobs:
   check:
@@ -11,9 +10,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 3
     steps:
+      # This is ordinary read-only PR CI, so validate the rules in the merge commit.
+      # Privileged labeling/approval remains in the default-branch controller.
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.repository.default_branch }}
           persist-credentials: false
       - uses: actions/github-script@v7
         with:

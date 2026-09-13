@@ -152,17 +152,8 @@ export async function gate({ github, context, core }) {
   if (pr.head.sha !== context.payload.pull_request.head.sha || pr.state !== 'open') throw new Error('PR head is obsolete or PR is closed');
   const result = validate(pr.body, true);
   if (result.errors.length) throw new Error(result.errors.join('\n'));
-  // Wait for the independent trusted controller, never accept a manually edited label.
-  const fingerprint = bodyFingerprint(pr);
-  for (let attempt = 0; attempt < 12; attempt++) {
-    const statuses = await github.paginate(github.rest.repos.listCommitStatusesForRef, { ...context.repo, ref: pr.head.sha, per_page: 100 });
-    const status = statuses.find(item => item.context === statusContext);
-    if (status?.state === 'success' && status.description?.startsWith(`${fingerprint} `) && status.creator?.login === 'github-actions[bot]') {
-      if (!await samePR(github, context.repo, pr)) throw new Error('PR changed while checking format');
-      core.info('Trusted PR format check passed');
-      return;
-    }
-    await new Promise(resolve => setTimeout(resolve, 5000));
-  }
-  throw new Error('Waiting for trusted PR Format status; controller will retry this format-blocked run.');
+  // A read-only PR job must also work when introducing the controller for the first time.
+  // Privileged approval separately validates the current body using default-branch code.
+  if (!await samePR(github, context.repo, pr)) throw new Error('PR changed while checking format');
+  core.info('PR description format passed');
 }
