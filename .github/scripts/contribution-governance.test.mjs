@@ -94,9 +94,8 @@ test('issues use current API body, not stale event body',async()=>{
   assert.ok(m.calls.find(c=>c.name==='addLabels').args.labels.includes('needs:format'));
 });
 
-test('read-only CI validates a new policy before its controller exists on main', async () => {
-  const m=mock();
-  m.github.paginate=async()=>{throw new Error('Bootstrap must not depend on controller statuses');};
+test('read-only CI accepts a matching trusted controller status', async () => {
+  const m=mock({statuses:[{context:'PR Format',state:'success',description:`${bodyFingerprint(pr)} Description format passed`,creator:{login:'github-actions[bot]'}}]});
   m.context.payload={pull_request:pr};
   await gate(m);
   assert.deepEqual(m.calls,[]);
@@ -110,8 +109,17 @@ test('CI gate rejects obsolete head or invalid body before executing code jobs',
 });
 
 test('read-only gate rejects a description edited during validation', async () => {
-  const m=mock();m.context.payload={pull_request:pr};
+  const m=mock({statuses:[{context:'PR Format',state:'success',description:`${bodyFingerprint(pr)} Description format passed`,creator:{login:'github-actions[bot]'}}]});m.context.payload={pull_request:pr};
   let reads=0;
   m.github.rest.pulls.get=async()=>({data:++reads===1?pr:{...pr,body:''}});
   await assert.rejects(gate(m),/PR changed/);
+});
+
+test('gate rejects missing, stale, failed, or untrusted controller statuses', async t => {
+  t.mock.method(globalThis, 'setTimeout', callback => { queueMicrotask(callback); return 0; });
+  const valid={context:'PR Format',state:'success',description:`${bodyFingerprint(pr)} Description format passed`,creator:{login:'github-actions[bot]'}};
+  for(const statuses of [[],[{...valid,description:'stale fingerprint'}],[{...valid,state:'failure'}],[{...valid,creator:{login:'contributor'}}]]) {
+    const m=mock({statuses});m.context.payload={pull_request:pr};
+    await assert.rejects(gate(m),/Waiting for trusted PR Format status/);
+  }
 });

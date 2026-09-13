@@ -243,7 +243,7 @@ An invalid description receives `needs:format` and one identifiable bot comment 
 
 #### CI Gate and Automatic Approval
 
-The controller records `PR Format` on the current PR head SHA, including a fingerprint of the head, target branch, and description. Separately, ordinary read-only PR CI validates the latest description using the rules in the PR merge commit and checks that the head is current. Code jobs depend on this lightweight gate. It does not require a controller status, so the PR introducing governance can itself run CI before merging. The privileged controller independently uses default-branch rules for labels and approval.
+The controller records `PR Format` on the current PR head SHA, including a fingerprint of the head, target branch, and description. The read-only PR CI gate loads default-branch rules, validates the latest description and current head, and waits for a successful controller status with the matching fingerprint. Code jobs depend on this gate. Both the gate and privileged controller use default-branch code; PR changes cannot substitute a different validator.
 
 Invalid format prevents dependency installation, lint, tests, and builds. GitHub may still create a workflow run or execute the lightweight gate. Existing CI path filters remain in effect. Push, release, and maintenance workflow_dispatch behavior does not use the PR gate. Docker shares build logic between read-only PR and publishing entry points; the PR caller passes no publishing secrets and fixes publishing to false.
 
@@ -264,7 +264,7 @@ API operations have bounded retries. An incomplete file list preserves existing 
 
 Maintainers can supply a PR number to `Contribution governance` through workflow_dispatch to reconcile it. An empty input scans eligible open PRs. `Sync labels` also supports manual dispatch and writes only from main in the primary repository.
 
-The read-only format gate works inside this PR. The privileged label/approval controller becomes active only after merging into main. A passing read-only gate does not establish that automatic fork approval works. Changes to workflow YAML still require normal code review; format validation is not an isolation mechanism for malicious workflow changes.
+Both the format gate and label/approval controller require their scripts on the default branch. During the initial rollout, pre-merge checks cannot load these scripts until they are merged into main. After deployment, verify the controller and fork approval behavior live; local tests do not establish that automatic approval works. Changes to workflow YAML still require normal code review; format validation is not an isolation mechanism for malicious workflow changes.
 
 ### Migration and Verification
 
@@ -286,6 +286,6 @@ node --test .github/scripts/*.test.mjs
 # Use actionlint to validate workflow configuration.
 ```
 
-Tests cover rendered forms, identity/type choices, screenshot explanations, QA declarations, fenced examples, duplicate sections, size boundaries/exclusions, renames, submodules, idempotent labels, comment reuse, current-head checks, automatic approval, format failure recovery, and the initial rollout without a main-branch controller.
+Tests cover rendered forms, identity/type choices, screenshot explanations, QA declarations, fenced examples, duplicate sections, size boundaries/exclusions, renames, submodules, idempotent labels, comment reuse, current-head checks, automatic approval, format failure recovery, and rejection of missing, stale, failed, or untrusted controller statuses.
 
 Live rollout verification must also use a real first-time contributor's fork PR. Invalid format should produce only format feedback; correcting the description should release eligible CI without a maintainer clicking Approve. Verify new commits, description edits, controller cancellation/recovery, and actual test failures separately. Mocked API tests and static validation do not replace this acceptance check.
