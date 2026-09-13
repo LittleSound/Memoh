@@ -1,9 +1,9 @@
 ---
-name: Feature Request
-description: 提出功能或改进建议
-title: "[Feature]: "
+name: Help
+description: 寻求安装、配置或使用帮助
+title: "[Help]: "
 labels:
-- feat
+- help
 body:
 - type: dropdown
   id: author
@@ -20,31 +20,38 @@ body:
   attributes:
     label: 变更类型
     options:
-    - feat
+    - help
   validations:
     required: true
 - type: textarea
   id: description
   attributes:
-    label: 功能描述
+    label: 遇到的问题
   validations:
     required: true
 - type: textarea
-  id: motivation
+  id: goal
   attributes:
-    label: 使用场景与动机
+    label: 希望达到的目标
   validations:
     required: true
 - type: textarea
-  id: solution
+  id: attempts
   attributes:
-    label: 建议方案
+    label: 已经尝试的方法
   validations:
-    required: false
+    required: true
 - type: textarea
-  id: alternatives
+  id: environment
   attributes:
-    label: 替代方案
+    label: 版本与运行环境
+  validations:
+    required: true
+- type: textarea
+  id: logs
+  attributes:
+    label: 日志
+    description: 如有相关错误，请粘贴日志并移除令牌等敏感信息。
   validations:
     required: false
 - type: textarea

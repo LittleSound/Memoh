@@ -19,6 +19,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - uses: actions/setup-go@v5
         with:
@@ -35,12 +37,29 @@ jobs:
           base: main
           title: "chore: sync model reasoning capabilities from LiteLLM"
           body: |
-            Automated refresh of `thinking_mode` / `reasoning_efforts` in the
-            first-party `conf/providers/*.yaml` templates, derived from the
-            LiteLLM registry by `cmd/synccaps`.
+            ## 提交者身份
+            - [x] Agent
+            - [ ] Human
 
-            Third-party reseller entries are pruned and only canonical first-party
-            model ids are matched, so review the YAML diff as the source of truth.
+            ## 变更类型
+            - [ ] bug
+            - [x] feat
+            - [ ] test
+
+            ## 变更说明
+            自动刷新供应商模板中的 thinking_mode 和 reasoning_efforts，并移除第三方转售条目。
+
+            ## 验证方式与结果
+            已运行 go run ./cmd/synccaps 完成生成；尚未验证真实供应商调用。
+
+            ## 截图 / 录屏
+            仅更新供应商能力配置，没有可见界面变化。以生成差异和 CI 结果作为验证。
+
+            ## 人工 QA 状态
+            - [x] 尚未人工验证
+            - [ ] 已获人工确认
+
+            ⚠️ **No human QA** — this PR has not been verified by a human yet. Remove this line once a human confirms the happy path.
           commit-message: "chore: sync model reasoning capabilities from LiteLLM"
           add-paths: conf/providers/*.yaml
           delete-branch: true

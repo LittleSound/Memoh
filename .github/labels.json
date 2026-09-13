@@ -1,0 +1,72 @@
+[
+  {
+    "name": "bug",
+    "color": "D73A4A",
+    "description": "问题修复"
+  },
+  {
+    "name": "feat",
+    "color": "2DA44E",
+    "description": "功能新增或改进"
+  },
+  {
+    "name": "test",
+    "color": "8250DF",
+    "description": "测试相关变更"
+  },
+  {
+    "name": "help",
+    "color": "0E8A8A",
+    "description": "使用求助"
+  },
+  {
+    "name": "size:XS",
+    "color": "0969DA",
+    "description": "排除生成文件后，按新增与删除行数的较大值计算"
+  },
+  {
+    "name": "size:S",
+    "color": "0969DA",
+    "description": "排除生成文件后，按新增与删除行数的较大值计算"
+  },
+  {
+    "name": "size:M",
+    "color": "0969DA",
+    "description": "排除生成文件后，按新增与删除行数的较大值计算"
+  },
+  {
+    "name": "size:L",
+    "color": "0969DA",
+    "description": "排除生成文件后，按新增与删除行数的较大值计算"
+  },
+  {
+    "name": "size:XL",
+    "color": "0969DA",
+    "description": "排除生成文件后，按新增与删除行数的较大值计算"
+  },
+  {
+    "name": "change:web",
+    "color": "D4C5F9",
+    "description": "自动识别的修改范围：web"
+  },
+  {
+    "name": "change:desktop",
+    "color": "D4C5F9",
+    "description": "自动识别的修改范围：desktop"
+  },
+  {
+    "name": "change:migrations",
+    "color": "D4C5F9",
+    "description": "自动识别的修改范围：migrations"
+  },
+  {
+    "name": "change:server",
+    "color": "D4C5F9",
+    "description": "自动识别的修改范围：server"
+  },
+  {
+    "name": "needs:format",
+    "color": "D97706",
+    "description": "请按模板补全描述；修正后自动移除"
+  }
+]

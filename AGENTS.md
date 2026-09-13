@@ -103,6 +103,17 @@ Bot persona templates (not developer guides):
 
 Memoh is a commercial project split across two repositories: this OSS repo and a private Cloud repo. The two codebases are similar but not identical — some PRs belong in OSS, others in Cloud. Before opening a PR, decide which repo it targets. Cloud periodically syncs from OSS, but the sync can silently skip some changes, so verify what actually landed instead of assuming the sync covered it.
 
+### Issue、PR 提交与自动化规范
+
+- 创建 Issue 或 PR 前阅读当前 `.github/ISSUE_TEMPLATE/` 或 `.github/pull_request_template.md`；CLI/API 提交也必须保留章节和选项。完整规则见 [贡献流程说明](docs/contribution-governance.md)。
+- Agent 必须声明 `Agent` 身份。Issue 使用 Bug、Feature 或 Help 模板；PR 在 `bug`、`feat`、`test` 中恰好选择一个主要类型。
+- 描述必须包含实际问题、修改后的行为和真实验证结果；未执行验证时说明原因，不得声称测试或操作已经完成。
+- 涉及可见界面或交互行为时，Agent 应尽量使用浏览器操作或 Computer Use 实际复现、验证和截图，并把 GitHub 可访问的截图附件放入 Issue/PR 描述。本地绝对路径不算已上传证据；无法截图、无法上传或不适用时，在截图章节具体说明原因和替代验证。
+- Agent 的截图、浏览器操作及自动化测试不算人工 QA；继续遵守下方人工确认披露规则。
+- 提交后检查 `PR Format` 和机器人评论。出现 `needs:format` 时修改原描述，Action 会重新检查、移除标签并自动放行适用的 CI；不要删除标签绕过检查，也不要创建重复条目。
+- 类型、`size:`、`change:` 标签由自动化维护；标签定义以 `.github/labels.json` 为准。Size 排除生成文件后取新增、删除行数的较大值，不将两者相加。
+- 自动批准的是外部 PR 的工作流运行，不是代码审查、合并或发布授权。自动更新本文档的 Agent 也不得移除或弱化以上规则。
+
 ### Pull Request QA Status
 
 Most PR descriptions in this repository are written by AI agents, and an agent must never silently stand in for human verification. Every PR body must disclose its QA state:
