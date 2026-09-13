@@ -2,71 +2,71 @@
   {
     "name": "bug",
     "color": "D73A4A",
-    "description": "问题修复"
+    "description": "Fixes a bug or unexpected behavior"
   },
   {
     "name": "feat",
     "color": "2DA44E",
-    "description": "功能新增或改进"
+    "description": "Adds or improves functionality"
   },
   {
     "name": "test",
     "color": "8250DF",
-    "description": "测试相关变更"
+    "description": "Adds or updates tests"
   },
   {
     "name": "help",
     "color": "0E8A8A",
-    "description": "使用求助"
+    "description": "Requests help with installation, configuration, or usage"
   },
   {
     "name": "size:XS",
     "color": "0969DA",
-    "description": "排除生成文件后，按新增与删除行数的较大值计算"
+    "description": "PR size uses the larger of added or deleted lines, excluding generated files"
   },
   {
     "name": "size:S",
     "color": "0969DA",
-    "description": "排除生成文件后，按新增与删除行数的较大值计算"
+    "description": "PR size uses the larger of added or deleted lines, excluding generated files"
   },
   {
     "name": "size:M",
     "color": "0969DA",
-    "description": "排除生成文件后，按新增与删除行数的较大值计算"
+    "description": "PR size uses the larger of added or deleted lines, excluding generated files"
   },
   {
     "name": "size:L",
     "color": "0969DA",
-    "description": "排除生成文件后，按新增与删除行数的较大值计算"
+    "description": "PR size uses the larger of added or deleted lines, excluding generated files"
   },
   {
     "name": "size:XL",
     "color": "0969DA",
-    "description": "排除生成文件后，按新增与删除行数的较大值计算"
+    "description": "PR size uses the larger of added or deleted lines, excluding generated files"
   },
   {
     "name": "change:web",
     "color": "D4C5F9",
-    "description": "自动识别的修改范围：web"
+    "description": "Changes web frontend or shared frontend packages"
   },
   {
     "name": "change:desktop",
     "color": "D4C5F9",
-    "description": "自动识别的修改范围：desktop"
+    "description": "Changes the Electron desktop app or shared desktop configuration"
   },
   {
     "name": "change:migrations",
     "color": "D4C5F9",
-    "description": "自动识别的修改范围：migrations"
+    "description": "Adds, modifies, or removes database migrations"
   },
   {
     "name": "change:server",
     "color": "D4C5F9",
-    "description": "自动识别的修改范围：server"
+    "description": "Changes backend code, configuration, or API contracts"
   },
   {
     "name": "needs:format",
     "color": "D97706",
-    "description": "请按模板补全描述；修正后自动移除"
+    "description": "Description needs template corrections; removed automatically once fixed"
   }
 ]
