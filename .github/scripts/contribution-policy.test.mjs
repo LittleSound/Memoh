@@ -134,3 +134,13 @@ test('read-only gate checks out the PR while the privileged controller checks ou
   const controller=load('contribution-governance.yml');
   assert.ok(controller.jobs.govern.steps.find(step=>step.uses?.startsWith('actions/checkout@')).with.ref.includes('default_branch'));
 });
+
+test('English template structure accepts free-form responses in any language', () => {
+  const multilingual = validPR()
+    .replace('Fix CI recovery after a description changes.', '修复描述修改后 CI 未恢复的问题。')
+    .replace('Ran the controller regression tests.', '回帰テストを実行し、成功しました。')
+    .replace('Only workflows change; there is no visible product UI. Verified with workflow tests.', 'Solo cambia el flujo de CI; no hay una interfaz visible.');
+  assert.deepEqual(validate(multilingual, true).errors, []);
+  const report = issue('help').replaceAll('Specific reproducible details', '这是用户填写的具体求助内容。');
+  assert.deepEqual(validate(report, false).errors, []);
+});

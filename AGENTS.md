@@ -2,7 +2,7 @@
 
 ## Working Language
 
-Repository-maintained templates, documentation, AGENTS.md guidance, label descriptions, and automated contribution messages must be written in **English**. Author commit messages and PR titles and descriptions in English; use Conventional Commits for commit messages and PR titles. Keep quoted user content, logs, and intentional product translations in their original language. In conversation, follow the user's preferred language.
+Repository-maintained templates, documentation, AGENTS.md guidance, label descriptions, and automated contribution messages are written in **English**. Contribution titles and free-form responses may use any language; preserve the section names and choices from the current template. Use Conventional Commits for commit messages and PR titles. In conversation, follow the user's preferred language.
 
 ## Project Overview
 
@@ -105,7 +105,7 @@ Memoh is a commercial project split across two repositories: this OSS repo and a
 
 ### Issue and PR Submission Rules
 
-- Before creating an issue or PR, read `.github/ISSUE_TEMPLATE/` or `.github/pull_request_template.md`. CLI and API submissions must preserve the same sections and choices. See [Contribution governance](docs/contribution-governance.md) for the complete rules.
+- Before creating an issue or PR, read `.github/ISSUE_TEMPLATE/` or `.github/pull_request_template.md`. CLI and API submissions must preserve the same sections and choices, without imposing a language on titles or free-form responses. See [Contributing Guide](CONTRIBUTING.md#issues-and-pull-requests) for the complete rules.
 - Agents must declare the `Agent` identity. Use the Bug, Feature, or Help issue template; select exactly one primary PR type from `bug`, `feat`, and `test`.
 - Describe the actual problem, resulting behavior, and verification results. Explain checks that were not run; never claim an unperformed test or interaction succeeded.
 - For visible UI or interaction changes, agents should use browser tools or Computer Use to reproduce and verify the behavior, capture screenshots, and attach GitHub-accessible images to the issue or PR description. Local absolute paths are not uploaded evidence. If capture or upload is unavailable or not applicable, explain why and describe alternative verification in the screenshots section.

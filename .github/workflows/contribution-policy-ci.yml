@@ -1,10 +1,10 @@
 name: Contribution policy CI
 on:
   pull_request:
-    paths: ['.github/**', 'docs/contribution-governance.md', 'AGENTS.md']
+    paths: ['.github/**', 'CONTRIBUTING.md', 'AGENTS.md']
   push:
     branches: [main]
-    paths: ['.github/**', 'docs/contribution-governance.md', 'AGENTS.md']
+    paths: ['.github/**', 'CONTRIBUTING.md', 'AGENTS.md']
 permissions:
   contents: read
   statuses: read
