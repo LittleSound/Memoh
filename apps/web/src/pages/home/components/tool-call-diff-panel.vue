@@ -72,8 +72,10 @@ watch(
 /* Diff panel rows: a solid indicator bar at the left edge of changed rows,
    then gutter line number + −/+ marker + code, all sharing one horizontal
    scroll width so every row's band spans the same distance. The gutter
-   columns stay sticky while scrolling and must repaint the row's band color
-   or the band would appear cut off left of the code. */
+   columns stay sticky while scrolling; they repaint the band composited over
+   the card surface (not --row-bg again, which would double the alpha into a
+   brighter block) so the band reads flat while scrolled code stays hidden
+   behind the gutter. */
 .shiki-diff-grid .diff-content {
   width: max-content;
   min-width: 100%;
@@ -115,7 +117,7 @@ watch(
 .shiki-diff-grid .diff-mk {
   position: sticky;
   z-index: 1;
-  background: var(--row-bg);
+  background: linear-gradient(var(--row-bg), var(--row-bg)), var(--card);
   user-select: none;
 }
 .shiki-diff-grid .diff-ln {
