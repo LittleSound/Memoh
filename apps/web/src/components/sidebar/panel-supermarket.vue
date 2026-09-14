@@ -60,7 +60,7 @@
             <div
               v-for="app in installed"
               :key="`${app.registry_id}/${app.app_id}`"
-              class="flex min-w-0 cursor-pointer items-start gap-3 py-2"
+              :class="appRowClass"
               role="button"
               tabindex="0"
               @click="openInstalled(app)"
@@ -134,7 +134,7 @@
           <div
             v-for="app in catalog"
             :key="`${app.registry_id}/${app.app_id}`"
-            class="flex min-w-0 cursor-pointer items-start gap-3 py-2"
+            :class="appRowClass"
             role="button"
             tabindex="0"
             @click="openCatalog(app)"
@@ -220,6 +220,9 @@ import SkillIcon from '@/pages/supermarket/components/skill-icon.vue'
 import InstallAppDialog from '@/pages/supermarket/components/install-app-dialog.vue'
 import SidebarPanelHeader from './panel-header.vue'
 import { filterInstalledApps, uninstalledApps } from './supermarket-apps'
+
+/** Preserve sidebar row geometry while sharing its existing hover color. */
+const appRowClass = 'flex min-w-0 cursor-pointer items-start gap-3 py-2 hover:bg-[color:var(--sidebar-hover)]' /* ui-allow-style: Dense sidebar rows retain their existing geometry and reuse the sidebar hover token. */
 
 const props = defineProps<{ botId: string, canManage: boolean }>()
 const { t, locale } = useI18n()
