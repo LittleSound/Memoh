@@ -3703,7 +3703,8 @@
       "installed": "Installed",
       "manageRequired": "Manage permission is required to install Apps for this bot.",
       "manage": "Manage",
-      "discovered": "Available in workspace"
+      "discovered": "Available in workspace",
+      "allLoaded": "All apps loaded"
     }
   },
   "connectors": {

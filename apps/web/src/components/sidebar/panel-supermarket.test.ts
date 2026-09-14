@@ -5,11 +5,12 @@ import { createI18n } from 'vue-i18n'
 import en from '@/i18n/locales/en.json'
 import PanelSupermarket from './panel-supermarket.vue'
 
-const mocks = vi.hoisted(() => ({ push: vi.fn(), preview: vi.fn() }))
+const mocks = vi.hoisted(() => ({ push: vi.fn(), preview: vi.fn(), catalog: vi.fn() }))
 vi.mock('@/pages/supermarket/components/skill-icon.vue', () => ({ default: { template: '<span />' } }))
 vi.mock('vue-router', () => ({ useRouter: () => ({ push: mocks.push }) }))
 vi.mock('@memohai/sdk', async importOriginal => ({
   ...await importOriginal<object>(),
+  getSupermarketApps: mocks.catalog,
   getSupermarketRegistriesByRegistryIdAppsByAppId: mocks.preview,
 }))
 vi.mock('@/pages/supermarket/components/install-app-dialog.vue', () => ({
@@ -41,6 +42,7 @@ let root: HTMLDivElement
 beforeEach(async () => {
   vi.clearAllMocks()
   vi.stubGlobal('ResizeObserver', class { observe() {} unobserve() {} disconnect() {} })
+  mocks.catalog.mockResolvedValue({ data: { data: [{ registry_id: 'memoh', app_id: 'go', name: 'Go' }], total: 1, limit: 30 } })
   mocks.preview.mockResolvedValue({ data: { registry_id: 'memoh', app_id: 'go' } })
   root = document.createElement('div')
   document.body.append(root)

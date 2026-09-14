@@ -7,7 +7,10 @@
         :aria-label="t('supermarket.searchPlaceholder')"
       />
     </div>
-    <ScrollArea class="sidebar-scroll min-h-0 flex-1">
+    <ScrollArea
+      ref="scrollAreaRef"
+      class="sidebar-scroll min-h-0 flex-1"
+    >
       <div class="space-y-3 px-3 pb-6">
         <p
           v-if="!botId"
@@ -117,31 +120,13 @@
           :label="t('supermarket.title')"
           class="h-8"
         />
-        <InlineLoadingRow v-if="catalogQuery.isLoading.value">
-          {{ t('common.loading') }}
-        </InlineLoadingRow>
-        <div
-          v-else-if="catalogQuery.error.value"
-          class="space-y-2"
+        <p
+          v-if="!catalog.length && !feed.loading.value && !feed.error.value && !feed.hasMore.value"
+          class="text-caption text-muted-foreground"
         >
-          <p class="text-caption text-muted-foreground">
-            {{ t('supermarket.loadError') }}
-          </p>
-          <Button
-            variant="outline"
-            size="sm"
-            @click="catalogQuery.refetch()"
-          >
-            {{ t('common.retry') }}
-          </Button>
-        </div>
-        <template v-else>
-          <p
-            v-if="!catalog.length"
-            class="text-caption text-muted-foreground"
-          >
-            {{ t('supermarket.noAppResults') }}
-          </p>
+          {{ t('supermarket.noAppResults') }}
+        </p>
+        <template v-if="catalog.length">
           <div
             v-for="app in catalog"
             :key="`${app.registry_id}/${app.app_id}`"
@@ -181,30 +166,43 @@
               </div>
             </div>
           </div>
-          <div
-            v-if="page > 1 || hasNextPage"
-            class="flex justify-end gap-2"
-          >
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              :disabled="page === 1"
-              :aria-label="t('supermarket.previousPage')"
-              @click="page--"
-            >
-              <ChevronLeft />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              :disabled="!hasNextPage"
-              :aria-label="t('supermarket.nextPage')"
-              @click="page++"
-            >
-              <ChevronRight />
-            </Button>
-          </div>
         </template>
+        <div
+          v-if="showSentinel && !feed.loading.value"
+          :key="feed.page.value"
+          :ref="el => (loadMoreSentinel = el as HTMLElement | null)"
+          aria-hidden="true"
+          class="h-px"
+        />
+        <InlineLoadingRow
+          v-if="feed.loading.value"
+          role="status"
+        >
+          {{ t('common.loading') }}
+        </InlineLoadingRow>
+        <div
+          v-else-if="feed.error.value"
+          class="space-y-2"
+          role="status"
+        >
+          <p class="text-caption text-muted-foreground">
+            {{ t('supermarket.loadError') }}
+          </p>
+          <Button
+            variant="outline"
+            size="sm"
+            @click="feed.retry()"
+          >
+            {{ t('common.retry') }}
+          </Button>
+        </div>
+        <p
+          v-else-if="!feed.hasMore.value && catalog.length"
+          class="text-caption text-muted-foreground"
+          role="status"
+        >
+          {{ t('supermarket.sidebar.allLoaded') }}
+        </p>
       </div>
     </ScrollArea>
     <InstallAppDialog
@@ -217,20 +215,22 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
 import { refDebounced } from '@vueuse/core'
 import { useQuery } from '@pinia/colada'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
-import { AlertTriangle, ChevronLeft, ChevronRight } from 'lucide-vue-next'
+import { AlertTriangle } from 'lucide-vue-next'
 import { Button, InlineLoadingRow, Input, ScrollArea, toast } from '@felinic/ui'
-import { getBotsByBotIdApps, getSupermarketApps, getSupermarketRegistriesByRegistryIdAppsByAppId, type HandlersAppItem, type HandlersSupermarketAppDescriptor, type HandlersSupermarketAppSummary } from '@memohai/sdk'
+import { getBotsByBotIdApps, getSupermarketRegistriesByRegistryIdAppsByAppId, type HandlersAppItem, type HandlersSupermarketAppDescriptor, type HandlersSupermarketAppSummary } from '@memohai/sdk'
 import { appDisplayDescription, appDisplayName, appKey, botAppsQueryKey } from '@/composables/api/useApps'
 import { useWorkspaceDependencyText } from '@/composables/useWorkspaceDependencyText'
 import { resolveApiErrorMessage } from '@/utils/api-error'
 import SkillIcon from '@/pages/supermarket/components/skill-icon.vue'
 import InstallAppDialog from '@/pages/supermarket/components/install-app-dialog.vue'
 import SidebarPanelHeader from './panel-header.vue'
+import { useSupermarketFeed } from './use-supermarket-feed'
+import { useSidebarInfiniteScroll } from './use-sidebar-infinite-scroll'
 import { filterInstalledApps, uninstalledApps } from './supermarket-apps'
 
 /** Extend hover padding beyond the content gutter to preserve alignment with the panel header. */
@@ -241,23 +241,36 @@ const { t, locale } = useI18n()
 const { appDependencyIconUrl } = useWorkspaceDependencyText()
 const router = useRouter()
 const search = ref('')
-const query = refDebounced(search, 300)
-const page = ref(1)
-const pageSize = 30
-watch(query, () => { page.value = 1 }, { flush: 'sync' })
+const query = refDebounced(computed(() => search.value.trim()), 300)
 const installedQuery = useQuery({
   key: () => botAppsQueryKey(props.botId),
   query: async () => (await getBotsByBotIdApps({ path: { bot_id: props.botId }, throwOnError: true })).data,
   enabled: () => !!props.botId && props.canManage,
 })
-const catalogQuery = useQuery({
-  key: () => ['sidebar-supermarket', query.value.trim(), page.value],
-  query: async () => (await getSupermarketApps({ query: { q: query.value.trim(), page: page.value, limit: pageSize, sort: 'relevance' }, throwOnError: true })).data,
-})
+const feed = useSupermarketFeed(query)
 const installedItems = computed(() => props.canManage && props.botId ? installedQuery.data.value?.items ?? [] : [])
 const installed = computed(() => filterInstalledApps(installedItems.value, query.value, locale.value))
-const catalog = computed(() => uninstalledApps(catalogQuery.data.value?.data ?? [], installedItems.value))
-const hasNextPage = computed(() => page.value * pageSize < (catalogQuery.data.value?.total ?? 0))
+const catalog = computed(() => uninstalledApps(feed.items.value, installedItems.value))
+const scrollAreaRef = ref<InstanceType<typeof ScrollArea> | null>(null)
+const scrollEl = computed(() => {
+  const root = scrollAreaRef.value?.$el as HTMLElement | undefined
+  return root?.querySelector<HTMLElement>('[data-slot="scroll-area-viewport"]') ?? null
+})
+const { loadMoreSentinel, showSentinel, resetScrollTop } = useSidebarInfiniteScroll({
+  scrollEl,
+  hasMore: computed(() => feed.hasMore.value && !feed.error.value && search.value.trim() === query.value),
+  loading: feed.loading,
+  loadMore: async () => {
+    await nextTick()
+    const viewport = scrollEl.value
+    if (!viewport || viewport.clientHeight <= 0 || search.value.trim() !== query.value) return
+    if (viewport.scrollHeight - viewport.scrollTop - viewport.clientHeight > 200) return
+    await feed.loadMore()
+  },
+  progressCursor: computed(() => String(feed.page.value)),
+  itemCount: computed(() => catalog.value.length),
+})
+watch(query, resetScrollTop, { flush: 'post' })
 const canInstall = computed(() => !!props.botId && props.canManage && !installedQuery.error.value && installedQuery.data.value?.workspace_state === 'running')
 const pendingApp = ref('')
 const selectedApp = ref<HandlersSupermarketAppDescriptor | null>(null)
