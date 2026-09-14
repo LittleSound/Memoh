@@ -1,6 +1,6 @@
 <template>
   <div class="flex h-full min-h-0 min-w-0 flex-col">
-    <div class="shrink-0 px-3 py-2">
+    <div class="shrink-0 px-2 py-2">
       <Input
         v-model="search"
         :placeholder="t('supermarket.searchPlaceholder')"
@@ -11,7 +11,7 @@
       ref="scrollAreaRef"
       class="sidebar-scroll min-h-0 flex-1"
     >
-      <div class="space-y-3 px-3 pb-6">
+      <div class="px-2 pb-6">
         <p
           v-if="!botId"
           class="text-caption text-muted-foreground"
@@ -27,101 +27,105 @@
         <template v-if="canManage && botId">
           <SidebarPanelHeader
             :label="t('supermarket.sidebar.installed')"
-            class="h-8"
+            class="mt-2 h-8"
+            label-class="pl-3"
           />
-          <InlineLoadingRow v-if="installedQuery.isLoading.value">
-            {{ t('common.loading') }}
-          </InlineLoadingRow>
-          <div
-            v-else-if="installedQuery.error.value"
-            class="space-y-2"
-          >
-            <p class="text-caption text-muted-foreground">
-              {{ t('apps.loadFailed') }}
-            </p>
-            <Button
-              variant="outline"
-              size="sm"
-              @click="installedQuery.refetch()"
-            >
-              {{ t('common.retry') }}
-            </Button>
-          </div>
-          <template v-else>
-            <p
-              v-if="installedQuery.data.value?.workspace_state !== 'running'"
-              class="text-caption text-muted-foreground"
-            >
-              {{ t('apps.workspaceNotRunningDescription') }}
-            </p>
-            <p
-              v-if="!installed.length"
-              class="text-caption text-muted-foreground"
-            >
-              {{ t(query.trim() ? 'supermarket.noAppResults' : 'apps.emptyTitle') }}
-            </p>
+          <div class="space-y-1.5 pb-1">
+            <InlineLoadingRow v-if="installedQuery.isLoading.value">
+              {{ t('common.loading') }}
+            </InlineLoadingRow>
             <div
-              v-for="app in installed"
-              :key="`${app.registry_id}/${app.app_id}`"
-              :class="appRowClass"
-              role="button"
-              tabindex="0"
-              @click="openInstalled(app)"
-              @keydown.enter.prevent="openInstalled(app)"
-              @keydown.space.prevent="openInstalled(app)"
+              v-else-if="installedQuery.error.value"
+              class="space-y-2"
             >
-              <SkillIcon
-                v-if="app.icon"
-                :icon="app.icon"
-                class="shrink-0"
-              />
-              <img
-                v-else-if="appDependencyIconUrl(app)"
-                :src="appDependencyIconUrl(app)"
-                alt=""
-                class="size-5 shrink-0 object-contain"
+              <p class="text-caption text-muted-foreground">
+                {{ t('apps.loadFailed') }}
+              </p>
+              <Button
+                variant="outline"
+                size="sm"
+                @click="installedQuery.refetch()"
               >
-              <SkillIcon
-                v-else
-                class="shrink-0"
-              />
-              <div class="min-w-0 flex-1 space-y-1">
-                <p
-                  class="truncate text-sm font-medium"
-                  :title="appDisplayName(app, locale)"
+                {{ t('common.retry') }}
+              </Button>
+            </div>
+            <template v-else>
+              <p
+                v-if="installedQuery.data.value?.workspace_state !== 'running'"
+                class="text-caption text-muted-foreground"
+              >
+                {{ t('apps.workspaceNotRunningDescription') }}
+              </p>
+              <p
+                v-if="!installed.length"
+                class="text-caption text-muted-foreground"
+              >
+                {{ t(query.trim() ? 'supermarket.noAppResults' : 'apps.emptyTitle') }}
+              </p>
+              <div
+                v-for="app in installed"
+                :key="`${app.registry_id}/${app.app_id}`"
+                :class="appRowClass"
+                role="button"
+                tabindex="0"
+                @click="openInstalled(app)"
+                @keydown.enter.prevent="openInstalled(app)"
+                @keydown.space.prevent="openInstalled(app)"
+              >
+                <SkillIcon
+                  v-if="app.icon"
+                  :icon="app.icon"
+                  class="shrink-0"
+                />
+                <img
+                  v-else-if="appDependencyIconUrl(app)"
+                  :src="appDependencyIconUrl(app)"
+                  alt=""
+                  class="size-5 shrink-0 object-contain"
                 >
-                  {{ appDisplayName(app, locale) }}
-                </p>
-                <p class="h-8 line-clamp-2 break-words text-caption text-muted-foreground">
-                  {{ appDisplayDescription(app, locale) }}
-                </p>
-                <div class="flex h-8 min-w-0 items-center justify-between gap-2">
-                  <span class="min-w-0 flex-1 truncate text-caption text-muted-foreground">{{ app.author?.name || app.registry_id }}</span>
+                <SkillIcon
+                  v-else
+                  class="shrink-0"
+                />
+                <div class="min-w-0 flex-1">
                   <p
-                    v-if="app.status === 'failed' || app.status === 'partial'"
-                    class="flex shrink-0 items-center gap-1 text-caption"
-                    :class="app.status === 'failed' ? 'text-destructive' : 'text-warning-foreground'"
+                    class="truncate text-control font-normal leading-snug text-foreground"
+                    :title="appDisplayName(app, locale)"
                   >
-                    <AlertTriangle
-                      class="size-3 shrink-0"
-                      aria-hidden="true"
-                    />
-                    {{ t(app.status === 'failed' ? 'apps.diagnostics.failed' : 'apps.diagnostics.partial') }}
+                    {{ appDisplayName(app, locale) }}
                   </p>
-                  <p
-                    v-else-if="app.status && app.status !== 'installed' && app.status !== 'discovered'"
-                    class="shrink-0 text-caption text-muted-foreground"
-                  >
-                    {{ t(`bots.dependencies.status.${app.status}`) }}
+                  <p class="mt-0.5 h-[2lh] line-clamp-2 break-words text-caption leading-snug text-muted-foreground">
+                    {{ appDisplayDescription(app, locale) }}
                   </p>
+                  <div class="mt-2 flex h-8 min-w-0 items-center justify-between gap-2">
+                    <span class="min-w-0 flex-1 truncate text-caption text-muted-foreground">{{ app.author?.name || app.registry_id }}</span>
+                    <p
+                      v-if="app.status === 'failed' || app.status === 'partial'"
+                      class="flex shrink-0 items-center gap-1 text-caption"
+                      :class="app.status === 'failed' ? 'text-destructive' : 'text-warning-foreground'"
+                    >
+                      <AlertTriangle
+                        class="size-3 shrink-0"
+                        aria-hidden="true"
+                      />
+                      {{ t(app.status === 'failed' ? 'apps.diagnostics.failed' : 'apps.diagnostics.partial') }}
+                    </p>
+                    <p
+                      v-else-if="app.status && app.status !== 'installed' && app.status !== 'discovered'"
+                      class="shrink-0 text-caption text-muted-foreground"
+                    >
+                      {{ t(`bots.dependencies.status.${app.status}`) }}
+                    </p>
+                  </div>
                 </div>
               </div>
-            </div>
-          </template>
+            </template>
+          </div>
         </template>
         <SidebarPanelHeader
           :label="t('supermarket.title')"
-          class="h-8"
+          class="mt-2 h-8"
+          label-class="pl-3"
         />
         <p
           v-if="!catalog.length && !feed.loading.value && !feed.error.value && !feed.hasMore.value"
@@ -129,7 +133,10 @@
         >
           {{ t('supermarket.noAppResults') }}
         </p>
-        <template v-if="catalog.length">
+        <div
+          v-if="catalog.length"
+          class="space-y-1.5 pb-1"
+        >
           <div
             v-for="app in catalog"
             :key="`${app.registry_id}/${app.app_id}`"
@@ -144,17 +151,17 @@
               :icon="app.icon"
               class="shrink-0"
             />
-            <div class="min-w-0 flex-1 space-y-1">
+            <div class="min-w-0 flex-1">
               <p
-                class="truncate text-sm font-medium"
+                class="truncate text-control font-normal leading-snug text-foreground"
                 :title="appDisplayName(app, locale)"
               >
                 {{ appDisplayName(app, locale) }}
               </p>
-              <p class="h-8 line-clamp-2 break-words text-caption text-muted-foreground">
+              <p class="mt-0.5 h-[2lh] line-clamp-2 break-words text-caption leading-snug text-muted-foreground">
                 {{ appDisplayDescription(app, locale) }}
               </p>
-              <div class="flex h-8 min-w-0 items-center justify-between gap-2">
+              <div class="mt-2 flex h-8 min-w-0 items-center justify-between gap-2">
                 <span class="min-w-0 flex-1 truncate text-caption text-muted-foreground">{{ app.author?.name || app.registry_id }}</span>
                 <Button
                   size="sm"
@@ -169,7 +176,7 @@
               </div>
             </div>
           </div>
-        </template>
+        </div>
         <div
           v-if="showSentinel && !feed.loading.value"
           :key="feed.page.value"
@@ -236,8 +243,8 @@ import { useSupermarketFeed } from './use-supermarket-feed'
 import { useSidebarInfiniteScroll } from './use-sidebar-infinite-scroll'
 import { filterInstalledApps, uninstalledApps } from './supermarket-apps'
 
-/** Extend hover padding beyond the content gutter to preserve alignment with the panel header. */
-const appRowClass = 'flex min-w-0 cursor-pointer items-start gap-3 -mx-2 rounded-[var(--radius-menu-shell)] border border-border bg-card px-2 py-2 transition-colors hover:bg-[color:var(--sidebar-hover)] focus-visible:outline-none' /* ui-allow-style: App cards reuse the schedule sidebar card surface and hover token while retaining their content layout. */
+/** Match the schedule sidebar card spacing while keeping a two-line description and equal action rows. */
+const appRowClass = 'flex min-w-0 cursor-pointer items-start gap-3 rounded-[var(--radius-menu-shell)] border border-border bg-card px-3 py-2.5 transition-colors hover:bg-[color:var(--sidebar-hover)] focus-visible:outline-none' /* ui-allow-style: App cards reuse the schedule sidebar card surface and hover token while retaining their content layout. */
 
 const props = defineProps<{ botId: string, canManage: boolean }>()
 const { t, locale } = useI18n()
