@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
-import { createApp, nextTick } from 'vue'
+import { createApp, h, nextTick, reactive } from 'vue'
 import { createI18n } from 'vue-i18n'
 import en from '@/i18n/locales/en.json'
 import PanelSupermarket from './panel-supermarket.vue'
@@ -51,6 +51,7 @@ vi.mock('@pinia/colada', async importOriginal => {
 })
 let app: ReturnType<typeof createApp>
 let root: HTMLDivElement
+let panelProps: { botId: string, canManage: boolean }
 beforeEach(async () => {
   vi.clearAllMocks()
   vi.stubGlobal('ResizeObserver', class { observe() {} unobserve() {} disconnect() {} })
@@ -58,7 +59,8 @@ beforeEach(async () => {
   mocks.preview.mockResolvedValue({ data: { registry_id: 'memoh', app_id: 'go' } })
   root = document.createElement('div')
   document.body.append(root)
-  app = createApp(PanelSupermarket, { botId: 'qa-bot', canManage: true })
+  panelProps = reactive({ botId: 'qa-bot', canManage: true })
+  app = createApp({ render: () => h(PanelSupermarket, panelProps) })
   app.use(createI18n({ legacy: false, locale: 'en', messages: { en } }))
   app.mount(root)
   await nextTick()
@@ -143,4 +145,20 @@ it('does not prefetch an overflowing list while its marker is still far below th
   vi.spyOn(sentinel, 'getBoundingClientRect').mockReturnValue({ top: 975, bottom: 976 } as DOMRect)
   await mocks.scroll()
   expect(mocks.catalog).toHaveBeenCalledOnce()
+})
+
+it.each(['bot', 'permission'])('discards a pending installation preview after a %s change', async change => {
+  let resolvePreview!: (value: unknown) => void
+  mocks.preview.mockReturnValueOnce(new Promise(resolve => { resolvePreview = resolve }))
+  card('Go').querySelector('button')!.click()
+  await nextTick()
+  expect(mocks.preview).toHaveBeenCalledOnce()
+  if (change === 'bot') panelProps.botId = 'another-bot'
+  else panelProps.canManage = false
+  await nextTick()
+  resolvePreview({ data: { registry_id: 'memoh', app_id: 'go' } })
+  await nextTick()
+  await nextTick()
+  expect(root.querySelector('[data-install-dialog]')).toBeNull()
+  expect(mocks.push).not.toHaveBeenCalled()
 })

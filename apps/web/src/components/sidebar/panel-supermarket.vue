@@ -249,7 +249,7 @@ import { useSidebarInfiniteScroll } from './use-sidebar-infinite-scroll'
 import { filterInstalledApps, uninstalledApps } from './supermarket-apps'
 
 /** Match the schedule sidebar card spacing with vertically centered two-line descriptions and compact, aligned action rows. */
-const appRowClass = 'flex min-w-0 cursor-pointer items-start gap-3 rounded-[var(--radius-menu-shell)] border border-border bg-card px-3 py-2.5 transition-colors hover:bg-[color:var(--sidebar-hover)] focus-visible:outline-none' /* ui-allow-style: App cards reuse the schedule sidebar card surface and hover token while retaining their content layout. */
+const appRowClass = 'flex min-w-0 cursor-pointer items-start gap-3 rounded-[var(--radius-menu-shell)] border border-border bg-card px-3 py-2.5 transition-colors hover:bg-[color:var(--sidebar-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring' /* ui-allow-style: App cards reuse the schedule sidebar card surface and hover token while retaining their content layout. */
 
 const props = defineProps<{ botId: string, canManage: boolean }>()
 const { t, locale } = useI18n()
@@ -271,21 +271,14 @@ const scrollEl = computed(() => {
   const root = scrollAreaRef.value?.$el as HTMLElement | undefined
   return root?.querySelector<HTMLElement>('[data-slot="scroll-area-viewport"]') ?? null
 })
-const { loadMoreSentinel, showSentinel, resetScrollTop } = useSidebarInfiniteScroll({
+const { loadMoreSentinel, showSentinel, resetScrollTop, isNearEnd } = useSidebarInfiniteScroll({
   scrollEl,
   hasMore: computed(() => feed.hasMore.value && !feed.error.value && search.value.trim() === query.value),
   loading: feed.loading,
-  /** Match the observer's marker geometry; scrollHeight also includes trailing panel padding. */
+  /** Wait for committed layout before applying the shared observer geometry. */
   loadMore: async () => {
     await nextTick()
-    const viewport = scrollEl.value
-    if (!viewport || viewport.clientHeight <= 0 || search.value.trim() !== query.value) return
-    const sentinel = loadMoreSentinel.value
-    if (sentinel) {
-      const marker = sentinel.getBoundingClientRect()
-      const bounds = viewport.getBoundingClientRect()
-      if (marker.top > bounds.bottom + 200 || marker.bottom < bounds.top) return
-    } else if (viewport.scrollHeight > viewport.clientHeight) return
+    if (search.value.trim() !== query.value || !isNearEnd()) return
     await feed.loadMore()
   },
   progressCursor: computed(() => String(feed.page.value)),
