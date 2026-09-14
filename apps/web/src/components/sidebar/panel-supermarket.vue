@@ -57,25 +57,20 @@
             >
               {{ t(query.trim() ? 'supermarket.noAppResults' : 'apps.emptyTitle') }}
             </p>
-            <div
+            <MarketItemCard
               v-for="app in installed"
-              :key="`${app.registry_id}/${app.app_id}`"
-              class="flex min-w-0 items-start gap-3 py-2"
+              :key="appKey(app)"
+              :name="appDisplayName(app, locale)"
+              :description="appDisplayDescription(app, locale)"
+              @open="openInstalled(app)"
             >
-              <SkillIcon
-                :icon="app.icon"
-                class="shrink-0"
-              />
-              <div class="min-w-0 flex-1">
-                <p
-                  class="truncate text-sm font-medium"
-                  :title="appDisplayName(app, locale)"
-                >
-                  {{ appDisplayName(app, locale) }}
-                </p>
-                <p class="line-clamp-2 break-words text-caption text-muted-foreground">
-                  {{ appDisplayDescription(app, locale) }}
-                </p>
+              <template #leading>
+                <SkillIcon :icon="app.icon" />
+              </template>
+              <template
+                v-if="app.status && app.status !== 'installed'"
+                #meta
+              >
                 <p
                   v-if="app.status === 'failed' || app.status === 'partial'"
                   class="flex items-center gap-1 text-caption"
@@ -88,20 +83,13 @@
                   {{ t(app.status === 'failed' ? 'apps.diagnostics.failed' : 'apps.diagnostics.partial') }}
                 </p>
                 <p
-                  v-else-if="app.status && app.status !== 'installed'"
+                  v-else
                   class="text-caption text-muted-foreground"
                 >
                   {{ t(app.status === 'discovered' ? 'supermarket.sidebar.discovered' : `bots.dependencies.status.${app.status}`) }}
                 </p>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  @click="openInstalled(app)"
-                >
-                  {{ t(app.status === 'failed' || app.status === 'partial' ? 'apps.diagnostics.viewDetails' : 'supermarket.sidebar.manage') }} <Settings class="size-3" />
-                </Button>
-              </div>
-            </div>
+              </template>
+            </MarketItemCard>
           </template>
         </template>
         <SidebarPanelHeader
@@ -133,39 +121,32 @@
           >
             {{ t('supermarket.noAppResults') }}
           </p>
-          <div
+          <MarketItemCard
             v-for="app in catalog"
-            :key="`${app.registry_id}/${app.app_id}`"
-            class="flex min-w-0 items-start gap-3 py-2"
+            :key="appKey(app)"
+            :name="appDisplayName(app, locale)"
+            :description="appDisplayDescription(app, locale)"
+            @open="openCatalog(app)"
           >
-            <SkillIcon
-              :icon="app.icon"
-              class="shrink-0"
-            />
-            <div class="min-w-0 flex-1 space-y-1">
-              <p
-                class="truncate text-sm font-medium"
-                :title="appDisplayName(app, locale)"
-              >
-                {{ appDisplayName(app, locale) }}
-              </p>
-              <p class="line-clamp-2 break-words text-caption text-muted-foreground">
-                {{ appDisplayDescription(app, locale) }}
-              </p>
-              <div class="flex flex-wrap items-center justify-between gap-2">
+            <template #leading>
+              <SkillIcon :icon="app.icon" />
+            </template>
+            <template #meta>
+              <div class="flex w-full flex-wrap items-center justify-between gap-2">
                 <span class="truncate text-caption text-muted-foreground">{{ app.author?.name || app.registry_id }}</span>
                 <Button
                   size="sm"
                   variant="outline"
                   :disabled="!canInstall || !!pendingApp"
                   :loading="pendingApp === appKey(app)"
-                  @click="prepareInstall(app)"
+                  @click.stop="prepareInstall(app)"
+                  @keydown.stop
                 >
                   {{ t('supermarket.install') }}
                 </Button>
               </div>
-            </div>
-          </div>
+            </template>
+          </MarketItemCard>
           <div
             v-if="page > 1 || hasNextPage"
             class="flex justify-end gap-2"
@@ -207,11 +188,12 @@ import { refDebounced } from '@vueuse/core'
 import { useQuery } from '@pinia/colada'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
-import { AlertTriangle, ChevronLeft, ChevronRight, Settings } from 'lucide-vue-next'
+import { AlertTriangle, ChevronLeft, ChevronRight } from 'lucide-vue-next'
 import { Button, InlineLoadingRow, Input, ScrollArea, toast } from '@felinic/ui'
 import { getBotsByBotIdApps, getSupermarketApps, getSupermarketRegistriesByRegistryIdAppsByAppId, type HandlersAppItem, type HandlersSupermarketAppDescriptor, type HandlersSupermarketAppSummary } from '@memohai/sdk'
 import { appDisplayDescription, appDisplayName, appKey, botAppsQueryKey } from '@/composables/api/useApps'
 import { resolveApiErrorMessage } from '@/utils/api-error'
+import MarketItemCard from '@/pages/supermarket/components/market-item-card.vue'
 import SkillIcon from '@/pages/supermarket/components/skill-icon.vue'
 import InstallAppDialog from '@/pages/supermarket/components/install-app-dialog.vue'
 import SidebarPanelHeader from './panel-header.vue'
@@ -274,5 +256,15 @@ async function prepareInstall(app: HandlersSupermarketAppSummary) {
 
 function openInstalled(app: HandlersAppItem) {
   void router.push({ name: 'bot-detail', params: { botName: props.botId }, query: { tab: 'apps', app: appKey(app) } })
+}
+
+/** Preserve the selected bot when browsing an uninstalled App. */
+function openCatalog(app: HandlersSupermarketAppSummary) {
+  if (!app.registry_id || !app.app_id) return
+  void router.push({
+    name: 'supermarket-app-detail',
+    params: { registryId: app.registry_id, appId: app.app_id },
+    query: props.botId ? { botId: props.botId } : undefined,
+  })
 }
 </script>

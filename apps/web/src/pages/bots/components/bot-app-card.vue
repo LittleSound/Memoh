@@ -21,7 +21,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
   Spinner,
-  TextButton,
 } from '@felinic/ui'
 import MarketItemCard from '@/pages/supermarket/components/market-item-card.vue'
 import SkillIcon from '@/pages/supermarket/components/skill-icon.vue'
@@ -112,12 +111,6 @@ const needsAttention = computed(() => props.item.status === 'failed' || props.it
         />
         {{ t(item.status === 'failed' ? 'apps.diagnostics.failed' : 'apps.diagnostics.partial') }}
       </span>
-      <TextButton
-        @click.stop="emit('action', 'open')"
-        @keydown.stop
-      >
-        {{ t('apps.diagnostics.viewDetails') }}
-      </TextButton>
     </template>
 
     <template #actions>
