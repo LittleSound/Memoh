@@ -85,33 +85,36 @@
                 v-else
                 class="shrink-0"
               />
-              <div class="min-w-0 flex-1">
+              <div class="min-w-0 flex-1 space-y-1">
                 <p
                   class="truncate text-sm font-medium"
                   :title="appDisplayName(app, locale)"
                 >
                   {{ appDisplayName(app, locale) }}
                 </p>
-                <p class="line-clamp-2 break-words text-caption text-muted-foreground">
+                <p class="h-8 line-clamp-2 break-words text-caption text-muted-foreground">
                   {{ appDisplayDescription(app, locale) }}
                 </p>
-                <p
-                  v-if="app.status === 'failed' || app.status === 'partial'"
-                  class="flex items-center gap-1 text-caption"
-                  :class="app.status === 'failed' ? 'text-destructive' : 'text-warning-foreground'"
-                >
-                  <AlertTriangle
-                    class="size-3 shrink-0"
-                    aria-hidden="true"
-                  />
-                  {{ t(app.status === 'failed' ? 'apps.diagnostics.failed' : 'apps.diagnostics.partial') }}
-                </p>
-                <p
-                  v-else-if="app.status && app.status !== 'installed' && app.status !== 'discovered'"
-                  class="text-caption text-muted-foreground"
-                >
-                  {{ t(`bots.dependencies.status.${app.status}`) }}
-                </p>
+                <div class="flex h-8 min-w-0 items-center justify-between gap-2">
+                  <span class="min-w-0 flex-1 truncate text-caption text-muted-foreground">{{ app.author?.name || app.registry_id }}</span>
+                  <p
+                    v-if="app.status === 'failed' || app.status === 'partial'"
+                    class="flex shrink-0 items-center gap-1 text-caption"
+                    :class="app.status === 'failed' ? 'text-destructive' : 'text-warning-foreground'"
+                  >
+                    <AlertTriangle
+                      class="size-3 shrink-0"
+                      aria-hidden="true"
+                    />
+                    {{ t(app.status === 'failed' ? 'apps.diagnostics.failed' : 'apps.diagnostics.partial') }}
+                  </p>
+                  <p
+                    v-else-if="app.status && app.status !== 'installed' && app.status !== 'discovered'"
+                    class="shrink-0 text-caption text-muted-foreground"
+                  >
+                    {{ t(`bots.dependencies.status.${app.status}`) }}
+                  </p>
+                </div>
               </div>
             </div>
           </template>
@@ -148,11 +151,11 @@
               >
                 {{ appDisplayName(app, locale) }}
               </p>
-              <p class="line-clamp-2 break-words text-caption text-muted-foreground">
+              <p class="h-8 line-clamp-2 break-words text-caption text-muted-foreground">
                 {{ appDisplayDescription(app, locale) }}
               </p>
-              <div class="flex flex-wrap items-center justify-between gap-2">
-                <span class="truncate text-caption text-muted-foreground">{{ app.author?.name || app.registry_id }}</span>
+              <div class="flex h-8 min-w-0 items-center justify-between gap-2">
+                <span class="min-w-0 flex-1 truncate text-caption text-muted-foreground">{{ app.author?.name || app.registry_id }}</span>
                 <Button
                   size="sm"
                   variant="outline"
@@ -234,7 +237,7 @@ import { useSidebarInfiniteScroll } from './use-sidebar-infinite-scroll'
 import { filterInstalledApps, uninstalledApps } from './supermarket-apps'
 
 /** Extend hover padding beyond the content gutter to preserve alignment with the panel header. */
-const appRowClass = 'flex min-w-0 cursor-pointer items-start gap-3 -mx-2 rounded-xl px-2 py-2 hover:bg-[color:var(--sidebar-hover)]' /* ui-allow-style: Dense sidebar rows retain their existing geometry and reuse the sidebar hover token. */
+const appRowClass = 'flex min-w-0 cursor-pointer items-start gap-3 -mx-2 rounded-[var(--radius-menu-shell)] border border-border bg-card px-2 py-2 transition-colors hover:bg-[color:var(--sidebar-hover)] focus-visible:outline-none' /* ui-allow-style: App cards reuse the schedule sidebar card surface and hover token while retaining their content layout. */
 
 const props = defineProps<{ botId: string, canManage: boolean }>()
 const { t, locale } = useI18n()

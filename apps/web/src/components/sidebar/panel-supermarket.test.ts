@@ -23,7 +23,7 @@ vi.mock('@pinia/colada', async importOriginal => {
     useQuery: (options: { key: () => string[] }) => ({
       data: ref(options.key()[0] === 'bot-apps'
         ? { workspace_state: 'running', items: [
-          { registry_id: 'memoh', app_id: 'bun', name: 'Bun', status: 'partial' },
+          { registry_id: 'memoh', app_id: 'bun', name: 'Bun', author: { name: 'Memoh Team' }, status: 'partial' },
           { registry_id: 'memoh', app_id: 'node', name: 'Node.js', status: 'discovered', dependencies: [
             { id: 'other', dependency: { icon_url: '/workspace-dependencies/icons/' + 'b'.repeat(64) } },
             { id: 'node', dependency: { icon_url: '/workspace-dependencies/icons/' + 'a'.repeat(64) } },
@@ -85,13 +85,12 @@ it.each(['Enter', ' '])('supports %s on the card itself', key => {
   expect(mocks.push).toHaveBeenCalledOnce()
 })
 
-it.each(['Bun', 'Go'])('preserves the original unframed sidebar row for %s', name => {
-  const row = card(name)
-  expect(row.classList.contains('py-2')).toBe(true)
-  expect(row.classList.contains('gap-3')).toBe(true)
-  expect(row.hasAttribute('data-slot')).toBe(false)
+it('keeps publishers visible and places an installed warning in the action row', () => {
+  const warning = Array.from(card('Bun').querySelectorAll('p')).find(el => el.textContent?.includes(en.apps.diagnostics.partial))
+  expect(warning?.parentElement?.textContent).toContain('Memoh Team')
+  expect(card('Node.js').textContent).toContain('memoh')
+  expect(card('Go').querySelector('button')?.parentElement?.textContent).toContain('memoh')
 })
-
 
 it('uses dependency icons for discovered apps without showing a redundant source label', () => {
   expect(card('Node.js').querySelector('img')?.getAttribute('src')).toContain('/workspace-dependencies/icons/' + 'a'.repeat(64))
