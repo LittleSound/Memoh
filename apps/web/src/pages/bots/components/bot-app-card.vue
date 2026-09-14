@@ -7,6 +7,7 @@
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import {
+  AlertTriangle,
   ExternalLink,
   MoreHorizontal,
   Package as AppIcon,
@@ -20,6 +21,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
   Spinner,
+  TextButton,
 } from '@felinic/ui'
 import MarketItemCard from '@/pages/supermarket/components/market-item-card.vue'
 import SkillIcon from '@/pages/supermarket/components/skill-icon.vue'
@@ -69,9 +71,7 @@ const inProgress = computed(() => appInProgress(props.item))
 const readonly = computed(() => props.workspaceState !== 'running' && props.workspaceState !== undefined)
 const primary = computed(() => appPrimaryAction(props.item, { busy: props.busy, ownsStream: props.ownsStream, readonly: readonly.value }))
 const canRemove = computed(() => !discovered.value && !inProgress.value)
-const failedText = computed(() => (
-  props.item.last_error && (props.item.status === 'failed' || props.item.status === 'partial') ? props.item.last_error : ''
-))
+const needsAttention = computed(() => props.item.status === 'failed' || props.item.status === 'partial')
 </script>
 
 <template>
@@ -99,12 +99,25 @@ const failedText = computed(() => (
     </template>
 
     <template
-      v-if="failedText"
+      v-if="needsAttention"
       #meta
     >
-      <p class="break-all font-mono text-caption text-destructive">
-        {{ failedText }}
-      </p>
+      <span
+        class="flex items-center gap-1 text-caption"
+        :class="item.status === 'failed' ? 'text-destructive' : 'text-warning-foreground'"
+      >
+        <AlertTriangle
+          class="size-3 shrink-0"
+          aria-hidden="true"
+        />
+        {{ t(item.status === 'failed' ? 'apps.diagnostics.failed' : 'apps.diagnostics.partial') }}
+      </span>
+      <TextButton
+        @click.stop="emit('action', 'open')"
+        @keydown.stop
+      >
+        {{ t('apps.diagnostics.viewDetails') }}
+      </TextButton>
     </template>
 
     <template #actions>

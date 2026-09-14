@@ -77,23 +77,28 @@
                   {{ appDisplayDescription(app, locale) }}
                 </p>
                 <p
-                  v-if="app.status && app.status !== 'installed'"
-                  class="text-caption text-muted-foreground"
+                  v-if="app.status === 'failed' || app.status === 'partial'"
+                  class="flex items-center gap-1 text-caption"
+                  :class="app.status === 'failed' ? 'text-destructive' : 'text-warning-foreground'"
                 >
-                  {{ t(app.status === 'partial' ? 'apps.progress.partialTitle' : app.status === 'discovered' ? 'supermarket.sidebar.discovered' : `bots.dependencies.status.${app.status}`) }}
+                  <AlertTriangle
+                    class="size-3 shrink-0"
+                    aria-hidden="true"
+                  />
+                  {{ t(app.status === 'failed' ? 'apps.diagnostics.failed' : 'apps.diagnostics.partial') }}
                 </p>
                 <p
-                  v-if="app.last_error"
-                  class="break-words text-caption text-destructive"
+                  v-else-if="app.status && app.status !== 'installed'"
+                  class="text-caption text-muted-foreground"
                 >
-                  {{ app.last_error }}
+                  {{ t(app.status === 'discovered' ? 'supermarket.sidebar.discovered' : `bots.dependencies.status.${app.status}`) }}
                 </p>
                 <Button
                   variant="ghost"
                   size="sm"
                   @click="openInstalled(app)"
                 >
-                  {{ t('supermarket.sidebar.manage') }} <Settings class="size-3" />
+                  {{ t(app.status === 'failed' || app.status === 'partial' ? 'apps.diagnostics.viewDetails' : 'supermarket.sidebar.manage') }} <Settings class="size-3" />
                 </Button>
               </div>
             </div>
@@ -202,7 +207,7 @@ import { refDebounced } from '@vueuse/core'
 import { useQuery } from '@pinia/colada'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
-import { ChevronLeft, ChevronRight, Settings } from 'lucide-vue-next'
+import { AlertTriangle, ChevronLeft, ChevronRight, Settings } from 'lucide-vue-next'
 import { Button, InlineLoadingRow, Input, ScrollArea, toast } from '@felinic/ui'
 import { getBotsByBotIdApps, getSupermarketApps, getSupermarketRegistriesByRegistryIdAppsByAppId, type HandlersAppItem, type HandlersSupermarketAppDescriptor, type HandlersSupermarketAppSummary } from '@memohai/sdk'
 import { appDisplayDescription, appDisplayName, appKey, botAppsQueryKey } from '@/composables/api/useApps'

@@ -3867,6 +3867,14 @@
     "copyFailed": "复制验证码失败"
   },
   "apps": {
+    "diagnostics": {
+      "failed": "操作失败",
+      "partial": "需要处理",
+      "viewDetails": "查看详情",
+      "errorDetails": "错误详情",
+      "copyError": "复制错误信息",
+      "partialHint": "部分组件失败或尚未授权。请检查下方组件，完成应用设置。"
+    },
     "title": "应用",
     "checkUpdates": "检查更新",
     "checkUpdatesDone": "更新检查完成",

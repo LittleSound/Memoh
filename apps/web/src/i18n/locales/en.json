@@ -3867,6 +3867,14 @@
     "copyFailed": "Failed to copy the code"
   },
   "apps": {
+    "diagnostics": {
+      "failed": "Operation failed",
+      "partial": "Needs attention",
+      "viewDetails": "View details",
+      "errorDetails": "Error details",
+      "copyError": "Copy error details",
+      "partialHint": "Some components failed or still need authorization. Review the components below to finish setup."
+    },
     "title": "Apps",
     "checkUpdates": "Check for updates",
     "checkUpdatesDone": "Update check finished",

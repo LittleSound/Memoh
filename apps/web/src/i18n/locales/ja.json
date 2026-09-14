@@ -3861,6 +3861,14 @@
     "copyFailed": "コードをコピーできませんでした"
   },
   "apps": {
+    "diagnostics": {
+      "failed": "操作に失敗しました",
+      "partial": "対応が必要",
+      "viewDetails": "詳細を見る",
+      "errorDetails": "エラーの詳細",
+      "copyError": "エラー情報をコピー",
+      "partialHint": "一部のコンポーネントで失敗したか、認証が必要です。下のコンポーネントを確認して設定を完了してください。"
+    },
     "title": "アプリ",
     "checkUpdates": "更新を確認",
     "checkUpdatesDone": "更新の確認が完了しました",

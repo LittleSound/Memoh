@@ -6,7 +6,7 @@
 // offer authorization and the enabled switch. Nothing here starts an
 // operation — every choice is emitted and the panel owns confirmation and
 // streaming.
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import {
   ExternalLink,
@@ -16,8 +16,11 @@ import {
   Trash2,
 } from 'lucide-vue-next'
 import {
-  Alert,
-  AlertDescription,
+  CalloutBanner,
+  ExpandableSettingsRow,
+  TextButton,
+  toast,
+  useClipboard,
   Button,
   DropdownMenu,
   DropdownMenuContent,
@@ -35,6 +38,7 @@ import SkillIcon from '@/pages/supermarket/components/skill-icon.vue'
 import {
   appDisplayDescription,
   appDisplayName,
+  appKey,
   appInProgress,
   type AppConnectorItem,
   type AppDependencyItem,
@@ -102,6 +106,22 @@ const inProgress = computed(() => appInProgress(props.item))
 const readonly = computed(() => props.workspaceState !== 'running' && props.workspaceState !== undefined)
 const primary = computed(() => appPrimaryAction(props.item, { busy: props.busy, ownsStream: props.ownsStream, readonly: readonly.value }))
 const canRemove = computed(() => !discovered.value && !inProgress.value)
+
+const needsAttention = computed(() => props.item.status === 'failed' || props.item.status === 'partial')
+const errorDetailsOpen = ref(false)
+const { copyText } = useClipboard()
+
+/** Keep diagnostics collapsed when navigation or a new operation changes their context. */
+watch(() => [appKey(props.item), props.item.installation_id, props.item.status, props.item.last_error], () => {
+  errorDetailsOpen.value = false
+})
+
+/** Copy the persisted diagnostic verbatim, using the shared clipboard feedback. */
+async function copyError() {
+  const ok = await copyText(props.item.last_error ?? '')
+  if (ok) toast.success(t('common.copied'))
+  else toast.error(t('common.copyFailed'))
+}
 
 const skills = computed(() => props.item.skills ?? [])
 const dependencies = computed<AppDependencyItem[]>(() => props.item.dependencies ?? [])
@@ -217,27 +237,41 @@ function dependencyName(dep: AppDependencyItem): string {
     <p class="mt-8 max-w-4xl text-base leading-7 text-muted-foreground">
       {{ description || t('supermarket.noDescription') }}
     </p>
-    <Alert
-      v-if="item.status === 'failed'"
-      variant="destructive"
-      class="mt-4"
+    <div
+      v-if="needsAttention"
+      class="mt-4 space-y-4"
     >
-      <AlertDescription>
-        {{ t('apps.progress.recoveryHint') }}
-        <p
-          v-if="item.last_error"
-          class="mt-2 break-all font-mono text-caption"
+      <CalloutBanner
+        :tone="item.status === 'failed' ? 'destructive' : 'warning'"
+        :title="t(item.status === 'failed' ? 'apps.diagnostics.failed' : 'apps.diagnostics.partial')"
+        :description="t(item.status === 'failed' ? 'apps.progress.recoveryHint' : 'apps.diagnostics.partialHint')"
+      />
+      <SettingsSection v-if="item.last_error">
+        <ExpandableSettingsRow
+          v-model:open="errorDetailsOpen"
+          :label="t('apps.diagnostics.errorDetails')"
         >
-          {{ item.last_error }}
-        </p>
-      </AlertDescription>
-    </Alert>
-    <p
-      v-if="item.last_error && item.status === 'partial'"
-      class="mt-2 break-all font-mono text-caption text-destructive"
-    >
-      {{ item.last_error }}
-    </p>
+          <template #expanded>
+            <div
+              v-if="errorDetailsOpen"
+              class="space-y-3"
+            >
+              <div
+                role="region"
+                :aria-label="t('apps.diagnostics.errorDetails')"
+                tabindex="0"
+                class="max-h-64 min-w-0 overflow-auto"
+              >
+                <pre class="whitespace-pre-wrap break-all font-mono text-caption text-foreground">{{ item.last_error }}</pre>
+              </div>
+              <TextButton @click="copyError">
+                {{ t('apps.diagnostics.copyError') }}
+              </TextButton>
+            </div>
+          </template>
+        </ExpandableSettingsRow>
+      </SettingsSection>
+    </div>
 
     <section
       v-if="skills.length"
