@@ -5,7 +5,19 @@ import { createI18n } from 'vue-i18n'
 import en from '@/i18n/locales/en.json'
 import PanelSupermarket from './panel-supermarket.vue'
 
-const mocks = vi.hoisted(() => ({ push: vi.fn(), preview: vi.fn(), catalog: vi.fn() }))
+const mocks = vi.hoisted(() => ({ push: vi.fn(), preview: vi.fn(), catalog: vi.fn(), scroll: vi.fn(), measure: vi.fn() }))
+vi.mock('./use-sidebar-infinite-scroll', async importOriginal => {
+  const original = await importOriginal<typeof import('./use-sidebar-infinite-scroll')>()
+  return {
+    ...original,
+    useSidebarInfiniteScroll: (options: Parameters<typeof original.useSidebarInfiniteScroll>[0]) => {
+      const result = original.useSidebarInfiniteScroll(options)
+      mocks.scroll.mockImplementation(options.loadMore)
+      mocks.measure.mockImplementation(result.measureScroll)
+      return result
+    },
+  }
+})
 vi.mock('@/pages/supermarket/components/skill-icon.vue', () => ({ default: { template: '<span />' } }))
 vi.mock('vue-router', () => ({ useRouter: () => ({ push: mocks.push }) }))
 vi.mock('@memohai/sdk', async importOriginal => ({
@@ -42,7 +54,7 @@ let root: HTMLDivElement
 beforeEach(async () => {
   vi.clearAllMocks()
   vi.stubGlobal('ResizeObserver', class { observe() {} unobserve() {} disconnect() {} })
-  mocks.catalog.mockResolvedValue({ data: { data: [{ registry_id: 'memoh', app_id: 'go', name: 'Go' }], total: 1, limit: 30 } })
+  mocks.catalog.mockResolvedValue({ data: { data: [{ registry_id: 'memoh', app_id: 'go', name: 'Go' }], total: 90, limit: 30 } })
   mocks.preview.mockResolvedValue({ data: { registry_id: 'memoh', app_id: 'go' } })
   root = document.createElement('div')
   document.body.append(root)
@@ -96,4 +108,39 @@ it('uses dependency icons for discovered apps without showing a redundant source
   expect(card('Node.js').querySelector('img')?.getAttribute('src')).toContain('/workspace-dependencies/icons/' + 'a'.repeat(64))
   expect(card('uv').querySelector('img')?.getAttribute('src')).toContain('/workspace-dependencies/icons/' + 'c'.repeat(64))
   expect(root.textContent).not.toContain(en.supermarket.sidebar.discovered)
+})
+
+/** The observer sees its marker before scrollHeight's trailing padding enters the same threshold. */
+it('loads on the first marker intersection even when trailing padding is beyond the threshold', async () => {
+  const viewport = root.querySelector<HTMLElement>('[data-slot="scroll-area-viewport"]')!
+  Object.defineProperties(viewport, {
+    clientHeight: { configurable: true, value: 600 },
+    scrollHeight: { configurable: true, value: 1000 },
+    scrollTop: { configurable: true, value: 185 },
+  })
+  vi.spyOn(viewport, 'getBoundingClientRect').mockReturnValue({ top: 0, bottom: 600 } as DOMRect)
+  mocks.measure()
+  await nextTick()
+  const sentinel = root.querySelector<HTMLElement>('[aria-hidden="true"].h-px')!
+  expect(sentinel).not.toBeNull()
+  vi.spyOn(sentinel, 'getBoundingClientRect').mockReturnValue({ top: 790, bottom: 791 } as DOMRect)
+  await mocks.scroll()
+  expect(mocks.catalog).toHaveBeenCalledTimes(2)
+  expect(mocks.catalog.mock.calls[1]![0].query.page).toBe(2)
+})
+
+it('does not prefetch an overflowing list while its marker is still far below the viewport', async () => {
+  const viewport = root.querySelector<HTMLElement>('[data-slot="scroll-area-viewport"]')!
+  Object.defineProperties(viewport, {
+    clientHeight: { configurable: true, value: 600 },
+    scrollHeight: { configurable: true, value: 1000 },
+    scrollTop: { configurable: true, value: 0 },
+  })
+  vi.spyOn(viewport, 'getBoundingClientRect').mockReturnValue({ top: 0, bottom: 600 } as DOMRect)
+  mocks.measure()
+  await nextTick()
+  const sentinel = root.querySelector<HTMLElement>('[aria-hidden="true"].h-px')!
+  vi.spyOn(sentinel, 'getBoundingClientRect').mockReturnValue({ top: 975, bottom: 976 } as DOMRect)
+  await mocks.scroll()
+  expect(mocks.catalog).toHaveBeenCalledOnce()
 })

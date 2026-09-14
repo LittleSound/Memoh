@@ -275,11 +275,17 @@ const { loadMoreSentinel, showSentinel, resetScrollTop } = useSidebarInfiniteScr
   scrollEl,
   hasMore: computed(() => feed.hasMore.value && !feed.error.value && search.value.trim() === query.value),
   loading: feed.loading,
+  /** Match the observer's marker geometry; scrollHeight also includes trailing panel padding. */
   loadMore: async () => {
     await nextTick()
     const viewport = scrollEl.value
     if (!viewport || viewport.clientHeight <= 0 || search.value.trim() !== query.value) return
-    if (viewport.scrollHeight - viewport.scrollTop - viewport.clientHeight > 200) return
+    const sentinel = loadMoreSentinel.value
+    if (sentinel) {
+      const marker = sentinel.getBoundingClientRect()
+      const bounds = viewport.getBoundingClientRect()
+      if (marker.top > bounds.bottom + 200 || marker.bottom < bounds.top) return
+    } else if (viewport.scrollHeight > viewport.clientHeight) return
     await feed.loadMore()
   },
   progressCursor: computed(() => String(feed.page.value)),
