@@ -3698,7 +3698,13 @@
     "installPreviewDependency": "install into the workspace if missing",
     "installPreviewConnector": "authorize during installation",
     "installPreviewConnectorOptional": "can be authorized later (optional)",
-    "viewAll": "View all"
+    "viewAll": "View all",
+    "sidebar": {
+      "installed": "Installed",
+      "manageRequired": "Manage permission is required to install Apps for this bot.",
+      "manage": "Manage",
+      "discovered": "Available in workspace"
+    }
   },
   "connectors": {
     "title": "Connectors",

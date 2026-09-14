@@ -47,7 +47,7 @@
          doesn't budge. ml and pl animate on the SAME curve, so icon-x is constant
          across the whole tween: the pill visibly opens left+right around a still
          icon. (Inter-tab gap must exceed the 3px bleed so the second tab's
-         leftward growth never overlaps the first — hence gap-1.5. The nav is also
+         leftward growth never overlaps the first — hence gap-1. The nav is also
          indented pl-3 so the active pill's 3px left bleed still clears the
          sidebar edge instead of kissing it.)
 
@@ -56,12 +56,12 @@
          track min width and break the circle. The icon→label gap lives on the
          INNER label span (clipped with the text when collapsed); the grid item
          is a bare overflow-hidden wrapper. -->
-    <nav class="flex shrink-0 items-center gap-1.5 pl-3 pr-2 py-1.5">
+    <nav class="flex min-w-0 shrink-0 items-center gap-1 pl-3 pr-2 py-1.5">
       <button
         v-for="view in availableViews"
         :key="view.id"
         type="button"
-        class="inline-flex h-8 shrink-0 cursor-pointer items-center justify-start rounded-full px-2 text-muted-foreground outline-none transition-[margin,padding,color,background-color] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--sidebar-hover)] hover:text-foreground dark:hover:text-[color:oklch(0.96_0_0)] focus-visible:ring-2 focus-visible:ring-ring data-[active=true]:-ml-[3px] data-[active=true]:bg-sidebar-accent data-[active=true]:pl-2.5 data-[active=true]:pr-3.5 data-[active=true]:text-foreground/90 dark:data-[active=true]:text-[color:oklch(0.96_0_0)]"
+        class="inline-flex h-8 min-w-0 shrink-0 data-[active=true]:shrink cursor-pointer items-center justify-start rounded-full px-2 text-muted-foreground outline-none transition-[margin,padding,color,background-color] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--sidebar-hover)] hover:text-foreground dark:hover:text-[color:oklch(0.96_0_0)] focus-visible:ring-2 focus-visible:ring-ring data-[active=true]:-ml-[3px] data-[active=true]:bg-sidebar-accent data-[active=true]:pl-2.5 data-[active=true]:pr-3.5 data-[active=true]:text-foreground/90 dark:data-[active=true]:text-[color:oklch(0.96_0_0)]"
         :data-active="sidebarView === view.id"
         :title="view.label"
         :aria-pressed="sidebarView === view.id"
@@ -82,11 +82,11 @@
           />
         </span>
         <span
-          class="grid transition-[grid-template-columns] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]"
+          class="grid min-w-0 transition-[grid-template-columns] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]"
           :class="sidebarView === view.id ? 'grid-cols-[1fr]' : 'grid-cols-[0fr]'"
         >
           <span class="min-w-0 overflow-hidden">
-            <span class="whitespace-nowrap pl-2 text-control font-[550]">{{ view.label }}</span>
+            <span class="block truncate pl-2 text-control font-[550]">{{ view.label }}</span>
           </span>
         </span>
       </button>
@@ -124,6 +124,13 @@
       />
       <PanelSchedule
         v-show="sidebarView === 'schedule'"
+        class="h-full"
+      />
+      <PanelSupermarket
+        v-if="supermarketMounted"
+        v-show="sidebarView === 'supermarket'"
+        :bot-id="currentBotId || ''"
+        :can-manage="hasBotPermission(currentBot?.current_user_permissions, 'manage')"
         class="h-full"
       />
       <div
@@ -170,7 +177,7 @@
 import { computed, onBeforeUnmount, ref, watch, type Component } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { storeToRefs } from 'pinia'
-import { Files, MessageCircle, Search, Calendar } from 'lucide-vue-next'
+import { Files, MessageCircle, Search, Calendar, Blocks } from 'lucide-vue-next'
 import { BadgeCount, Button } from '@felinic/ui'
 import { useChatStore } from '@/store/chat-list'
 import { useWorkspaceTabsStore, type SidebarView } from '@/store/workspace-tabs'
@@ -181,6 +188,7 @@ import UpdateChip from './update-chip.vue'
 import PanelSessions from './panel-sessions.vue'
 import PanelFiles from './panel-files.vue'
 import PanelSchedule from './panel-schedule.vue'
+import PanelSupermarket from './panel-supermarket.vue'
 import SessionSearchDialog from './session-search-dialog.vue'
 
 defineProps<{
@@ -216,6 +224,11 @@ const asideStyle = computed<Record<string, string>>(() => ({
 }))
 
 const searchOpen = ref(false)
+const supermarketMounted = ref(false)
+/** Keep installation dialogs alive when switching sidebar views after the first visit. */
+watch(sidebarView, (view) => {
+  if (view === 'supermarket') supermarketMounted.value = true
+}, { immediate: true })
 
 const currentBot = computed(() =>
   bots.value.find(bot => bot.id === currentBotId.value) ?? null,
@@ -232,6 +245,7 @@ const availableViews = computed<ActivityView[]>(() => {
     views.push({ id: 'files', label: t('chat.activityBar.files'), icon: Files })
   }
   views.push({ id: 'schedule', label: t('chat.activityBar.schedule'), icon: Calendar })
+  views.push({ id: 'supermarket', label: t('supermarket.title'), icon: Blocks })
   return views
 })
 

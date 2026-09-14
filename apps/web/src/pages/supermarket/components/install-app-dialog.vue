@@ -15,7 +15,10 @@
         </DialogDescription>
       </DialogHeader>
       <div class="space-y-4 py-2">
-        <FieldStack :label="$t('supermarket.selectBot')">
+        <FieldStack
+          v-if="!lockBot"
+          :label="$t('supermarket.selectBot')"
+        >
           <BotSelect
             v-model="selectedBotId"
             trigger-class="w-full"
@@ -88,7 +91,7 @@
     :status="active?.status ?? 'running'"
     :result="active?.result"
     :error="active?.error"
-    :done-label="$t('apps.viewBotApps')"
+    :done-label="lockBot ? $t('bots.dependencies.done') : $t('apps.viewBotApps')"
     @update:open="setProgressOpen"
     @retry="retry"
     @done="openBotApps"
@@ -126,6 +129,8 @@ const props = defineProps<{
   open: boolean
   pkg: HandlersSupermarketAppDescriptor | null
   defaultBotId?: string
+  /** Keep sidebar installations bound to their originating bot and finish in chat. */
+  lockBot?: boolean
 }>()
 const emit = defineEmits<{
   'update:open': [open: boolean]
@@ -181,6 +186,7 @@ function openBotApps() {
   const botId = selectedBotId.value
   if (!botId) return
   emit('installed', botId)
+  if (props.lockBot) return
   void router.push({ name: 'bot-detail', params: { botName: botId }, query: { tab: 'apps' } }).catch(() => {})
 }
 </script>

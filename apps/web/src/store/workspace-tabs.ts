@@ -29,7 +29,7 @@ import i18n from '@/i18n'
 // selection still follows whichever chat view is active. Desktop is a
 // singleton WebRTC viewer per bot (DISPLAY_PANEL_ID).
 
-export type SidebarView = 'sessions' | 'files' | 'schedule'
+export type SidebarView = 'sessions' | 'files' | 'schedule' | 'supermarket'
 
 export const CHAT_PANEL_ID = 'chat'
 

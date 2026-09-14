@@ -3692,7 +3692,13 @@
     "installPreviewDependency": "未インストールならワークスペースにインストールします",
     "installPreviewConnector": "インストール中に認証",
     "installPreviewConnectorOptional": "後で認証できます（任意）",
-    "viewAll": "すべて表示"
+    "viewAll": "すべて表示",
+    "sidebar": {
+      "installed": "インストール済み",
+      "manageRequired": "App のインストールには、この Bot の管理権限が必要です。",
+      "manage": "管理",
+      "discovered": "Workspace で利用可能"
+    }
   },
   "connectors": {
     "title": "コネクター",
