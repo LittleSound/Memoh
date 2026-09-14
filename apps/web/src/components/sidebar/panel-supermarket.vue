@@ -234,7 +234,7 @@ import SidebarPanelHeader from './panel-header.vue'
 import { filterInstalledApps, uninstalledApps } from './supermarket-apps'
 
 /** Extend hover padding beyond the content gutter to preserve alignment with the panel header. */
-const appRowClass = 'flex min-w-0 cursor-pointer items-start gap-3 -mx-2 px-2 py-2 hover:bg-[color:var(--sidebar-hover)]' /* ui-allow-style: Dense sidebar rows retain their existing geometry and reuse the sidebar hover token. */
+const appRowClass = 'flex min-w-0 cursor-pointer items-start gap-3 -mx-2 rounded-xl px-2 py-2 hover:bg-[color:var(--sidebar-hover)]' /* ui-allow-style: Dense sidebar rows retain their existing geometry and reuse the sidebar hover token. */
 
 const props = defineProps<{ botId: string, canManage: boolean }>()
 const { t, locale } = useI18n()
