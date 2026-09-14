@@ -57,20 +57,30 @@
             >
               {{ t(query.trim() ? 'supermarket.noAppResults' : 'apps.emptyTitle') }}
             </p>
-            <MarketItemCard
+            <div
               v-for="app in installed"
-              :key="appKey(app)"
-              :name="appDisplayName(app, locale)"
-              :description="appDisplayDescription(app, locale)"
-              @open="openInstalled(app)"
+              :key="`${app.registry_id}/${app.app_id}`"
+              class="flex min-w-0 cursor-pointer items-start gap-3 py-2"
+              role="button"
+              tabindex="0"
+              @click="openInstalled(app)"
+              @keydown.enter.prevent="openInstalled(app)"
+              @keydown.space.prevent="openInstalled(app)"
             >
-              <template #leading>
-                <SkillIcon :icon="app.icon" />
-              </template>
-              <template
-                v-if="app.status && app.status !== 'installed'"
-                #meta
-              >
+              <SkillIcon
+                :icon="app.icon"
+                class="shrink-0"
+              />
+              <div class="min-w-0 flex-1">
+                <p
+                  class="truncate text-sm font-medium"
+                  :title="appDisplayName(app, locale)"
+                >
+                  {{ appDisplayName(app, locale) }}
+                </p>
+                <p class="line-clamp-2 break-words text-caption text-muted-foreground">
+                  {{ appDisplayDescription(app, locale) }}
+                </p>
                 <p
                   v-if="app.status === 'failed' || app.status === 'partial'"
                   class="flex items-center gap-1 text-caption"
@@ -83,13 +93,13 @@
                   {{ t(app.status === 'failed' ? 'apps.diagnostics.failed' : 'apps.diagnostics.partial') }}
                 </p>
                 <p
-                  v-else
+                  v-else-if="app.status && app.status !== 'installed'"
                   class="text-caption text-muted-foreground"
                 >
                   {{ t(app.status === 'discovered' ? 'supermarket.sidebar.discovered' : `bots.dependencies.status.${app.status}`) }}
                 </p>
-              </template>
-            </MarketItemCard>
+              </div>
+            </div>
           </template>
         </template>
         <SidebarPanelHeader
@@ -121,18 +131,31 @@
           >
             {{ t('supermarket.noAppResults') }}
           </p>
-          <MarketItemCard
+          <div
             v-for="app in catalog"
-            :key="appKey(app)"
-            :name="appDisplayName(app, locale)"
-            :description="appDisplayDescription(app, locale)"
-            @open="openCatalog(app)"
+            :key="`${app.registry_id}/${app.app_id}`"
+            class="flex min-w-0 cursor-pointer items-start gap-3 py-2"
+            role="button"
+            tabindex="0"
+            @click="openCatalog(app)"
+            @keydown.enter.prevent="openCatalog(app)"
+            @keydown.space.prevent="openCatalog(app)"
           >
-            <template #leading>
-              <SkillIcon :icon="app.icon" />
-            </template>
-            <template #meta>
-              <div class="flex w-full flex-wrap items-center justify-between gap-2">
+            <SkillIcon
+              :icon="app.icon"
+              class="shrink-0"
+            />
+            <div class="min-w-0 flex-1 space-y-1">
+              <p
+                class="truncate text-sm font-medium"
+                :title="appDisplayName(app, locale)"
+              >
+                {{ appDisplayName(app, locale) }}
+              </p>
+              <p class="line-clamp-2 break-words text-caption text-muted-foreground">
+                {{ appDisplayDescription(app, locale) }}
+              </p>
+              <div class="flex flex-wrap items-center justify-between gap-2">
                 <span class="truncate text-caption text-muted-foreground">{{ app.author?.name || app.registry_id }}</span>
                 <Button
                   size="sm"
@@ -145,8 +168,8 @@
                   {{ t('supermarket.install') }}
                 </Button>
               </div>
-            </template>
-          </MarketItemCard>
+            </div>
+          </div>
           <div
             v-if="page > 1 || hasNextPage"
             class="flex justify-end gap-2"
@@ -193,7 +216,6 @@ import { Button, InlineLoadingRow, Input, ScrollArea, toast } from '@felinic/ui'
 import { getBotsByBotIdApps, getSupermarketApps, getSupermarketRegistriesByRegistryIdAppsByAppId, type HandlersAppItem, type HandlersSupermarketAppDescriptor, type HandlersSupermarketAppSummary } from '@memohai/sdk'
 import { appDisplayDescription, appDisplayName, appKey, botAppsQueryKey } from '@/composables/api/useApps'
 import { resolveApiErrorMessage } from '@/utils/api-error'
-import MarketItemCard from '@/pages/supermarket/components/market-item-card.vue'
 import SkillIcon from '@/pages/supermarket/components/skill-icon.vue'
 import InstallAppDialog from '@/pages/supermarket/components/install-app-dialog.vue'
 import SidebarPanelHeader from './panel-header.vue'
@@ -257,7 +279,6 @@ async function prepareInstall(app: HandlersSupermarketAppSummary) {
 function openInstalled(app: HandlersAppItem) {
   void router.push({ name: 'bot-detail', params: { botName: props.botId }, query: { tab: 'apps', app: appKey(app) } })
 }
-
 /** Preserve the selected bot when browsing an uninstalled App. */
 function openCatalog(app: HandlersSupermarketAppSummary) {
   if (!app.registry_id || !app.app_id) return

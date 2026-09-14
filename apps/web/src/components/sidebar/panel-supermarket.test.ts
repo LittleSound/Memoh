@@ -73,3 +73,10 @@ it.each(['Enter', ' '])('supports %s on the card itself', key => {
   card('Go').dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true }))
   expect(mocks.push).toHaveBeenCalledOnce()
 })
+
+it.each(['Bun', 'Go'])('preserves the original unframed sidebar row for %s', name => {
+  const row = card(name)
+  expect(row.classList.contains('py-2')).toBe(true)
+  expect(row.classList.contains('gap-3')).toBe(true)
+  expect(row.hasAttribute('data-slot')).toBe(false)
+})
