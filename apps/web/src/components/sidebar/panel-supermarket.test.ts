@@ -21,7 +21,16 @@ vi.mock('@pinia/colada', async importOriginal => {
     ...await importOriginal<object>(),
     useQuery: (options: { key: () => string[] }) => ({
       data: ref(options.key()[0] === 'bot-apps'
-        ? { workspace_state: 'running', items: [{ registry_id: 'memoh', app_id: 'bun', name: 'Bun', status: 'partial' }] }
+        ? { workspace_state: 'running', items: [
+          { registry_id: 'memoh', app_id: 'bun', name: 'Bun', status: 'partial' },
+          { registry_id: 'memoh', app_id: 'node', name: 'Node.js', status: 'discovered', dependencies: [
+            { id: 'other', dependency: { icon_url: '/workspace-dependencies/icons/' + 'b'.repeat(64) } },
+            { id: 'node', dependency: { icon_url: '/workspace-dependencies/icons/' + 'a'.repeat(64) } },
+          ] },
+          { registry_id: 'memoh', app_id: 'uv', name: 'uv', status: 'discovered', dependencies: [
+            { id: 'python-tools', dependency: { icon_url: '/workspace-dependencies/icons/' + 'c'.repeat(64) } },
+          ] },
+        ] }
         : { data: [{ registry_id: 'memoh', app_id: 'go', name: 'Go' }], total: 1 }),
       error: ref(null), isLoading: ref(false), refetch: vi.fn(),
     }),
@@ -79,4 +88,11 @@ it.each(['Bun', 'Go'])('preserves the original unframed sidebar row for %s', nam
   expect(row.classList.contains('py-2')).toBe(true)
   expect(row.classList.contains('gap-3')).toBe(true)
   expect(row.hasAttribute('data-slot')).toBe(false)
+})
+
+
+it('uses dependency icons for discovered apps without showing a redundant source label', () => {
+  expect(card('Node.js').querySelector('img')?.getAttribute('src')).toContain('/workspace-dependencies/icons/' + 'a'.repeat(64))
+  expect(card('uv').querySelector('img')?.getAttribute('src')).toContain('/workspace-dependencies/icons/' + 'c'.repeat(64))
+  expect(root.textContent).not.toContain(en.supermarket.sidebar.discovered)
 })

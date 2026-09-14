@@ -85,16 +85,9 @@ const emit = defineEmits<{
 }>()
 
 const { t, locale } = useI18n()
-const { dependencyIconUrl } = useWorkspaceDependencyText()
+const { appDependencyIconUrl } = useWorkspaceDependencyText()
 
-// A discovered App has no release, so no icon of its own; its dependency
-// carries the same artwork.
-const fallbackIconUrl = computed(() => {
-  if (props.item.icon) return ''
-  const deps = props.item.dependencies ?? []
-  const dep = deps.find(entry => entry.id === props.item.app_id) ?? deps[0]
-  return dep?.dependency ? dependencyIconUrl(dep.dependency) : ''
-})
+const fallbackIconUrl = computed(() => appDependencyIconUrl(props.item))
 
 // Same icon box as the Supermarket detail header.
 const iconBoxClass = 'flex size-16 shrink-0 items-center justify-center overflow-hidden rounded-md border bg-background shadow-sm' /* ui-allow-style */

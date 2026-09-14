@@ -68,7 +68,18 @@
               @keydown.space.prevent="openInstalled(app)"
             >
               <SkillIcon
+                v-if="app.icon"
                 :icon="app.icon"
+                class="shrink-0"
+              />
+              <img
+                v-else-if="appDependencyIconUrl(app)"
+                :src="appDependencyIconUrl(app)"
+                alt=""
+                class="size-5 shrink-0 object-contain"
+              >
+              <SkillIcon
+                v-else
                 class="shrink-0"
               />
               <div class="min-w-0 flex-1">
@@ -93,10 +104,10 @@
                   {{ t(app.status === 'failed' ? 'apps.diagnostics.failed' : 'apps.diagnostics.partial') }}
                 </p>
                 <p
-                  v-else-if="app.status && app.status !== 'installed'"
+                  v-else-if="app.status && app.status !== 'installed' && app.status !== 'discovered'"
                   class="text-caption text-muted-foreground"
                 >
-                  {{ t(app.status === 'discovered' ? 'supermarket.sidebar.discovered' : `bots.dependencies.status.${app.status}`) }}
+                  {{ t(`bots.dependencies.status.${app.status}`) }}
                 </p>
               </div>
             </div>
@@ -215,17 +226,19 @@ import { AlertTriangle, ChevronLeft, ChevronRight } from 'lucide-vue-next'
 import { Button, InlineLoadingRow, Input, ScrollArea, toast } from '@felinic/ui'
 import { getBotsByBotIdApps, getSupermarketApps, getSupermarketRegistriesByRegistryIdAppsByAppId, type HandlersAppItem, type HandlersSupermarketAppDescriptor, type HandlersSupermarketAppSummary } from '@memohai/sdk'
 import { appDisplayDescription, appDisplayName, appKey, botAppsQueryKey } from '@/composables/api/useApps'
+import { useWorkspaceDependencyText } from '@/composables/useWorkspaceDependencyText'
 import { resolveApiErrorMessage } from '@/utils/api-error'
 import SkillIcon from '@/pages/supermarket/components/skill-icon.vue'
 import InstallAppDialog from '@/pages/supermarket/components/install-app-dialog.vue'
 import SidebarPanelHeader from './panel-header.vue'
 import { filterInstalledApps, uninstalledApps } from './supermarket-apps'
 
-/** Preserve sidebar row geometry while sharing its existing hover color. */
-const appRowClass = 'flex min-w-0 cursor-pointer items-start gap-3 py-2 hover:bg-[color:var(--sidebar-hover)]' /* ui-allow-style: Dense sidebar rows retain their existing geometry and reuse the sidebar hover token. */
+/** Extend hover padding beyond the content gutter to preserve alignment with the panel header. */
+const appRowClass = 'flex min-w-0 cursor-pointer items-start gap-3 -mx-2 px-2 py-2 hover:bg-[color:var(--sidebar-hover)]' /* ui-allow-style: Dense sidebar rows retain their existing geometry and reuse the sidebar hover token. */
 
 const props = defineProps<{ botId: string, canManage: boolean }>()
 const { t, locale } = useI18n()
+const { appDependencyIconUrl } = useWorkspaceDependencyText()
 const router = useRouter()
 const search = ref('')
 const query = refDebounced(search, 300)
