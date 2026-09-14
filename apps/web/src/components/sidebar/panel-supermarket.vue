@@ -94,10 +94,12 @@
                   >
                     {{ appDisplayName(app, locale) }}
                   </p>
-                  <p class="mt-0.5 h-[2lh] line-clamp-2 break-words text-caption leading-snug text-muted-foreground">
-                    {{ appDisplayDescription(app, locale) }}
-                  </p>
-                  <div class="mt-2 flex h-8 min-w-0 items-center justify-between gap-2">
+                  <div class="mt-1 flex h-8 items-center text-caption text-muted-foreground">
+                    <p class="w-full line-clamp-2 break-words text-left">
+                      {{ appDisplayDescription(app, locale) }}
+                    </p>
+                  </div>
+                  <div class="mt-1 flex h-5.5 min-w-0 items-center justify-between gap-1.5">
                     <span class="min-w-0 flex-1 truncate text-caption text-muted-foreground">{{ app.author?.name || app.registry_id }}</span>
                     <p
                       v-if="app.status === 'failed' || app.status === 'partial'"
@@ -158,14 +160,17 @@
               >
                 {{ appDisplayName(app, locale) }}
               </p>
-              <p class="mt-0.5 h-[2lh] line-clamp-2 break-words text-caption leading-snug text-muted-foreground">
-                {{ appDisplayDescription(app, locale) }}
-              </p>
-              <div class="mt-2 flex h-8 min-w-0 items-center justify-between gap-2">
+              <div class="mt-1 flex h-8 items-center text-caption text-muted-foreground">
+                <p class="w-full line-clamp-2 break-words text-left">
+                  {{ appDisplayDescription(app, locale) }}
+                </p>
+              </div>
+              <div class="mt-1 flex h-5.5 min-w-0 items-center justify-between gap-1.5">
                 <span class="min-w-0 flex-1 truncate text-caption text-muted-foreground">{{ app.author?.name || app.registry_id }}</span>
                 <Button
-                  size="sm"
+                  size="text"
                   variant="outline"
+                  class="h-5.5 py-0 text-caption font-normal"
                   :disabled="!canInstall || !!pendingApp"
                   :loading="pendingApp === appKey(app)"
                   @click.stop="prepareInstall(app)"
@@ -243,7 +248,7 @@ import { useSupermarketFeed } from './use-supermarket-feed'
 import { useSidebarInfiniteScroll } from './use-sidebar-infinite-scroll'
 import { filterInstalledApps, uninstalledApps } from './supermarket-apps'
 
-/** Match the schedule sidebar card spacing while keeping a two-line description and equal action rows. */
+/** Match the schedule sidebar card spacing with vertically centered two-line descriptions and compact, aligned action rows. */
 const appRowClass = 'flex min-w-0 cursor-pointer items-start gap-3 rounded-[var(--radius-menu-shell)] border border-border bg-card px-3 py-2.5 transition-colors hover:bg-[color:var(--sidebar-hover)] focus-visible:outline-none' /* ui-allow-style: App cards reuse the schedule sidebar card surface and hover token while retaining their content layout. */
 
 const props = defineProps<{ botId: string, canManage: boolean }>()
