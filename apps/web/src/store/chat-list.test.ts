@@ -666,6 +666,52 @@ describe('chat-list store', () => {
       expect(api.fetchSessions).toHaveBeenCalledWith('bot-ready')
     })
 
+  it('falls back to another bot when a refresh no longer lists the current bot', async () => {
+      api.fetchBots.mockResolvedValue([
+        { id: 'bot-a', status: 'active', name: 'A' },
+        { id: 'bot-b', status: 'active', name: 'B' },
+      ])
+      const store = useChatStore()
+      await store.selectBot('bot-b')
+      api.fetchSessions.mockClear()
+
+      api.fetchBots.mockResolvedValue([{ id: 'bot-a', status: 'active', name: 'A' }])
+      await store.refreshBots()
+
+      expect(store.currentBotId).toBe('bot-a')
+      expect(api.fetchSessions).toHaveBeenCalledWith('bot-a')
+      expect(api.fetchSessions).not.toHaveBeenCalledWith('bot-b')
+    })
+
+  it('clears the selection when a refresh returns no bots', async () => {
+      api.fetchBots.mockResolvedValue([{ id: 'bot-b', status: 'active', name: 'B' }])
+      const store = useChatStore()
+      await store.selectBot('bot-b')
+
+      api.fetchBots.mockResolvedValue([])
+      await store.refreshBots()
+
+      expect(store.currentBotId).toBeNull()
+      expect(store.sessionId).toBeNull()
+      expect(store.bots).toEqual([])
+    })
+
+  it('keeps the current bot when a refresh only drops another bot', async () => {
+      api.fetchBots.mockResolvedValue([
+        { id: 'bot-a', status: 'active', name: 'A' },
+        { id: 'bot-b', status: 'active', name: 'B' },
+      ])
+      const store = useChatStore()
+      await store.selectBot('bot-b')
+      api.fetchSessions.mockClear()
+
+      api.fetchBots.mockResolvedValue([{ id: 'bot-b', status: 'active', name: 'B' }])
+      await store.refreshBots()
+
+      expect(store.currentBotId).toBe('bot-b')
+      expect(api.fetchSessions).not.toHaveBeenCalled()
+    })
+
   it('requests the Desktop once when each Browser Use or Computer Use call starts', async () => {
       h.sendUpdates = [
         runtime.started,

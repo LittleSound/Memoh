@@ -190,6 +190,7 @@ export const useChatStore = defineStore('chat', () => {
   } = createChatBots({
     currentBotId,
     userScopeGeneration: () => userScopeGeneration,
+    onCurrentBotRemoved: nextBotId => nextBotId ? selectBot(nextBotId) : void (currentBotId.value = null),
   })
   const {
     activeFailure: startupSendFailure,

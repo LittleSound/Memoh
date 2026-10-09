@@ -629,6 +629,7 @@ function handleBackupImported(botId: string) {
 async function handleDeleteBot() {
   try {
     await deleteBot()
+    void chatStore.refreshBots().catch(() => {})
     await router.push({ name: 'bots' })
     toast.success(t('bots.deleteSuccess'))
   } catch (error) {
